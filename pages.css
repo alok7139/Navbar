@@ -1,0 +1,19 @@
+.page-heading {
+  color: #007b8f;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.btn-custom {
+  background-color: #00bfa6 !important;
+  border-color: #00bfa6 !important;
+  color: #fff !important;
+  border-radius: 25px;
+  padding: 8px 25px;
+  transition: all 0.3s ease;
+}
+
+.btn-custom:hover {
+  background-color: #00a58f !important;
+  border-color: #00a58f !important;
+}
