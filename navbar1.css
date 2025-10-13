@@ -16,3 +16,7 @@
   border-radius: 25px;
   padding: 6px 20px;
 }
+
+
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
