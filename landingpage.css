@@ -1,0 +1,31 @@
+ <style>{`
+        .translate-up {
+          transform: translateY(-20px);
+        }
+        .opacity-0 {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        .opacity-100 {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        @media (max-width: 576px) {
+          h1 {
+            font-size: 1.6rem;
+          }
+          p {
+            font-size: 1rem;
+          }
+        }
+      `}</style>
+
+
+      .card-hover {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-10px); /* pop up effect */
+  box-shadow: 0 20px 30px rgba(0, 0, 0, 0.2); /* stronger shadow */
+}
