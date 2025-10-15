@@ -1,22 +1,126 @@
-.navbar {
-  padding: 0.8rem 1rem;
+/* Base Reset for Navbar */
+.lnb-navbar {
+  width: 100%;
+  background-color: whitesmoke; /* Updated background */
+  padding: 10px 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  font-family: 'Arial', sans-serif;
 }
 
-.nav-link {
-  font-weight: 500;
-  color: #333 !important;
-  transition: color 0.3s ease;
+.lnb-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.nav-link:hover {
-  color: #007bff !important;
+.lnb-logo {
+  color: #333; /* Darker for contrast */
+  font-size: 1.5rem;
+  font-weight: bold;
 }
 
-.btn-primary {
-  border-radius: 25px;
-  padding: 6px 20px;
+.lnb-menu {
+  display: flex;
+  list-style: none;
+  gap: 20px;
 }
 
+.lnb-item {
+}
 
-import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap/dist/js/bootstrap.bundle.min.js";
+.lnb-link {
+  color: #333;
+  text-decoration: none;
+  padding: 8px 12px;
+  transition: background 0.3s, color 0.3s;
+  border-radius: 4px;
+}
+
+.lnb-link:hover {
+  background-color: #e0e0e0;
+}
+
+.lnb-button {
+  background-color: #007b8f;
+  color: #fff !important;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  transition: background 0.3s;
+}
+
+.lnb-button:hover {
+  background-color: #005f6b;
+}
+
+/* Hamburger Menu */
+.lnb-hamburger {
+  display: none;
+  flex-direction: column;
+  cursor: pointer;
+  gap: 5px;
+}
+
+.lnb-hamburger span {
+  display: block;
+  height: 3px;
+  width: 25px;
+  background: #333; /* Darker for contrast */
+  border-radius: 2px;
+  transition: all 0.3s;
+}
+
+/* Hamburger animation */
+.lnb-hamburger-active span:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.lnb-hamburger-active span:nth-child(2) {
+  opacity: 0;
+}
+
+.lnb-hamburger-active span:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -5px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .lnb-hamburger {
+    display: flex;
+  }
+
+  .lnb-menu {
+    position: absolute;
+    top: 60px;
+    left: 0;
+    width: 100%;
+    background-color: whitesmoke;
+    flex-direction: column;
+    align-items: center;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out;
+  }
+
+  .lnb-menu.lnb-menu-active {
+    max-height: 500px;
+  }
+
+  .lnb-item {
+    width: 100%;
+    text-align: center;
+    padding: 10px 0;
+  }
+
+  .lnb-link,
+  .lnb-button {
+    width: 80%;
+    display: block;
+  }
+}
