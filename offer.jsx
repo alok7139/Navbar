@@ -12,7 +12,7 @@ export default function OfferPage() {
 
   useEffect(() => {
     if (modalRef.current && !bsModal.current) {
-      bsModal.current = new window.bootstrap.Modal(modalRef.current, {
+      bsModal.current = new Modal(modalRef.current, {
         backdrop: 'static',
         keyboard: true,
       });
@@ -218,6 +218,26 @@ export default function OfferPage() {
     </div>
   );
 }
+
+
+
+<td className="d-flex gap-2">
+  <button
+    className="btn btn-sm btn-success"
+    onClick={() => handleActionClick({ ...r, action: 'Approved' })}
+    disabled={isDisabled}
+  >
+    Approve
+  </button>
+  <button
+    className="btn btn-sm btn-danger"
+    onClick={() => handleActionClick({ ...r, action: 'Rejected' })}
+    disabled={isDisabled}
+  >
+    Reject
+  </button>
+</td>
+
 
 
 

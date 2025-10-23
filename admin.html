@@ -1,0 +1,1622 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Role API Tester</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            color: #059669;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .token-section {
+            background: #f0fdf4;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 2px solid #10b981;
+        }
+
+        .token-section input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            background: #e0e0e0;
+        }
+
+        .tab.active {
+            background: #10b981;
+            color: white;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        button[type="submit"],
+        .action-btn {
+            background: #10b981;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        button[type="submit"]:hover,
+        .action-btn:hover {
+            background: #059669;
+        }
+
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #10b981;
+        }
+
+        .response h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .response pre {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+
+        .error {
+            border-left-color: #e53e3e;
+        }
+
+        .success {
+            border-left-color: #48bb78;
+        }
+
+        .file-input {
+            padding: 5px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .doc-button {
+            border: none;
+            padding: 6px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .doc-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-view {
+            background: #0369a1;
+            color: white;
+        }
+
+        .btn-view:hover {
+            background: #075985;
+        }
+
+        .btn-download {
+            background: #059669;
+            color: white;
+        }
+
+        .btn-download:hover {
+            background: #047857;
+        }
+
+        .file-info {
+            background: #f0f9ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #bae6fd;
+        }
+
+        .file-info h4 {
+            margin: 0 0 12px 0;
+            color: #0369a1;
+            font-size: 16px;
+        }
+
+        .file-row {
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+        }
+
+        .file-row strong {
+            min-width: 120px;
+            color: #374151;
+        }
+
+        .file-row span {
+            flex: 1;
+            color: #6b7280;
+        }
+
+        .app-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .app-card h4 {
+            color: #059669;
+            margin-bottom: 10px;
+        }
+
+        .app-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .app-info-item {
+            font-size: 14px;
+            color: #4b5563;
+        }
+
+        .app-info-item strong {
+            color: #1f2937;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .status-in-progress {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-approved {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-approve {
+            background: #10b981;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-reject {
+            background: #ef4444;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-info {
+            background: #3b82f6;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .credit-score-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .credit-score-box h3 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+        }
+
+        .credit-score-box .score {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .credit-score-box .rating {
+            font-size: 20px;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+
+            .grid,
+            .grid-3,
+            .app-info {
+                grid-template-columns: 1fr;
+            }
+
+            .file-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .file-row strong {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🟢 Sales Role API Tester</h1>
+        <p class="subtitle">Complete Sales Dashboard - Manage applications, verify documents, and generate offers</p>
+
+        <div class="token-section">
+            <label>🔑 Sales Authorization Token (Set after login)</label>
+            <input type="text" id="authToken" placeholder="Your SALES JWT token will appear here after login">
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showSection('login')">Login</button>
+            <button class="tab" onclick="showSection('submit')">Submit Application</button>
+            <button class="tab" onclick="showSection('myapps')">My Applications</button>
+            <button class="tab" onclick="showSection('allapps')">All Applications</button>
+            <button class="tab" onclick="showSection('getapp')">Get Application</button>
+            <button class="tab" onclick="showSection('update')">Update Application</button>
+            <button class="tab" onclick="showSection('pending')">Pending Verifications</button>
+            <button class="tab" onclick="showSection('verify')">Verify Documents</button>
+            <button class="tab" onclick="showSection('offers')">Ready for Offers</button>
+            <button class="tab" onclick="showSection('creditscore')">Credit Score</button>
+            <button class="tab" onclick="showSection('processoffer')">Process Offer</button>
+        </div>
+
+        <!-- Login Section -->
+        <div id="login" class="section active">
+            <h2>🔐 Sales Login</h2>
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" name="email" value="sales@gmail.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Password *</label>
+                    <input type="password" name="password" value="123456" required>
+                </div>
+                <button type="submit">Login as Sales</button>
+            </form>
+            <div id="loginResponse"></div>
+        </div>
+
+        <!-- Submit Application Section -->
+        <div id="submit" class="section">
+            <h2>📋 Submit Application for Customer</h2>
+            <form onsubmit="handleSubmit(event)">
+                <div class="grid">
+                    <div class="form-group">
+                        <label>Full Name *</label>
+                        <input type="text" name="fullName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" name="email" required>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="form-group">
+                        <label>Phone Number *</label>
+                        <input type="tel" name="phoneNumber" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Date of Birth *</label>
+                        <input type="date" name="dateOfBirth" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Address *</label>
+                    <textarea name="address" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Card Type *</label>
+                    <select name="cardType" required>
+                        <option value="">Select Card Type</option>
+                        <option value="GOLD">GOLD</option>
+                        <option value="PLATINUM">PLATINUM</option>
+                        <option value="SILVER">SILVER</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Aadhar PDF *</label>
+                    <input type="file" name="aadharPdf" accept=".pdf" required class="file-input">
+                </div>
+                <div class="form-group">
+                    <label>PAN PDF *</label>
+                    <input type="file" name="panPdf" accept=".pdf" required class="file-input">
+                </div>
+                <div class="form-group">
+                    <label>Income Proof PDF (Optional)</label>
+                    <input type="file" name="incomeProofPdf" accept=".pdf" class="file-input">
+                </div>
+                <button type="submit">Submit Application</button>
+            </form>
+            <div id="submitResponse"></div>
+        </div>
+
+        <!-- My Applications Section -->
+        <div id="myapps" class="section">
+            <h2>📂 My Applications</h2>
+            <button onclick="handleMyApplications()" class="action-btn">Get My Applications</button>
+            <div id="myappsResponse"></div>
+        </div>
+
+        <!-- All Applications Section -->
+        <div id="allapps" class="section">
+            <h2>🌐 All Applications (Onboarding)</h2>
+            <button onclick="handleAllApplications()" class="action-btn">Get All Applications</button>
+            <div id="allappsResponse"></div>
+        </div>
+
+        <!-- Get Application Section -->
+        <div id="getapp" class="section">
+            <h2>🔍 Get Application by ID</h2>
+            <form onsubmit="handleGetApplication(event)">
+                <div class="form-group">
+                    <label>Application ID *</label>
+                    <input type="text" name="appId" required placeholder="e.g., abcd1234-5678-90ef-ghij-klmnopqrstuv">
+                </div>
+                <button type="submit">Get Application</button>
+            </form>
+            <div id="getappResponse"></div>
+        </div>
+
+        <!-- Update Application Section -->
+        <div id="update" class="section">
+            <h2>✏ Update Application</h2>
+            <form onsubmit="handleUpdate(event)" id="updateForm">
+                <div class="form-group">
+                    <label>Application ID *</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="updateAppId" name="appId" required
+                            placeholder="e.g., abcd1234-5678-90ef-ghij-klmnopqrstuv" style="flex: 1;">
+                        <button type="button" onclick="loadApplicationData()"
+                            style="background: #48bb78; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">Load
+                            Data</button>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="form-group">
+                        <label>Full Name *</label>
+                        <input type="text" id="updateFullName" name="fullName" required autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" id="updateEmail" name="email" required autocomplete="off">
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="form-group">
+                        <label>Phone Number *</label>
+                        <input type="tel" id="updatePhoneNumber" name="phoneNumber" required autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label>Date of Birth *</label>
+                        <input type="date" id="updateDateOfBirth" name="dateOfBirth" required autocomplete="off">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Address *</label>
+                    <textarea id="updateAddress" name="address" required autocomplete="off"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Card Type *</label>
+                    <select id="updateCardType" name="cardType" required autocomplete="off">
+                        <option value="">Select Card Type</option>
+                        <option value="GOLD">GOLD</option>
+                        <option value="PLATINUM">PLATINUM</option>
+                        <option value="SILVER">SILVER</option>
+                    </select>
+                </div>
+                <div id="currentFilesInfo" style="display: none;"></div>
+                <div class="form-group">
+                    <label>Aadhar PDF (Optional - only if updating)</label>
+                    <input type="file" name="aadharPdf" accept=".pdf" class="file-input">
+                </div>
+                <div class="form-group">
+                    <label>PAN PDF (Optional - only if updating)</label>
+                    <input type="file" name="panPdf" accept=".pdf" class="file-input">
+                </div>
+                <div class="form-group">
+                    <label>Income Proof PDF (Optional - only if updating)</label>
+                    <input type="file" name="incomeProofPdf" accept=".pdf" class="file-input">
+                </div>
+                <button type="submit">Update Application</button>
+            </form>
+            <div id="updateResponse"></div>
+        </div>
+
+        <!-- Pending Verifications Section -->
+        <div id="pending" class="section">
+            <h2>⏳ Document Verifications</h2>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                <button onclick="handlePendingVerifications()" class="action-btn">Load All Applications</button>
+                <button onclick="filterVerifications('ALL')" class="doc-button"
+                    style="background: #6b7280; color: white; padding: 10px 20px;">Show All</button>
+                <button onclick="filterVerifications('IN_PROGRESS')" class="doc-button"
+                    style="background: #f59e0b; color: white; padding: 10px 20px;">In Progress</button>
+                <button onclick="filterVerifications('APPROVED')" class="doc-button"
+                    style="background: #10b981; color: white; padding: 10px 20px;">Approved</button>
+                <button onclick="filterVerifications('REJECTED')" class="doc-button"
+                    style="background: #ef4444; color: white; padding: 10px 20px;">Rejected</button>
+            </div>
+            <div id="pendingResponse"></div>
+        </div>
+
+        <!-- Verify Documents Section -->
+        <div id="verify" class="section">
+            <h2>✅ Verify Documents</h2>
+            <div class="grid">
+                <div>
+                    <h3>Approve Documents</h3>
+                    <form onsubmit="handleVerify(event, 'APPROVED')">
+                        <div class="form-group">
+                            <label>Application ID *</label>
+                            <input type="text" name="appId" required
+                                placeholder="e.g., abcd1234-5678-90ef-ghij-klmnopqrstuv">
+                        </div>
+                        <button type="submit" class="btn-approve">Approve Documents</button>
+                    </form>
+                </div>
+                <div>
+                    <h3>Reject Documents</h3>
+                    <form onsubmit="handleVerify(event, 'REJECTED')">
+                        <div class="form-group">
+                            <label>Application ID *</label>
+                            <input type="text" name="appId" required
+                                placeholder="e.g., abcd1234-5678-90ef-ghij-klmnopqrstuv">
+                        </div>
+                        <div class="form-group">
+                            <label>Rejection Reason *</label>
+                            <textarea name="rejectReason" required
+                                placeholder="e.g., Aadhar document is not clear..."></textarea>
+                        </div>
+                        <button type="submit" class="btn-reject">Reject Documents</button>
+                    </form>
+                </div>
+            </div>
+            <div id="verifyResponse"></div>
+        </div>
+
+        <!-- Ready for Offers Section -->
+        <div id="offers" class="section">
+            <h2>🎁 Offer Management</h2>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                <button onclick="handleReadyForOffers()" class="action-btn">Load All Offers</button>
+                <button onclick="filterOffers('ALL')" class="doc-button"
+                    style="background: #6b7280; color: white; padding: 10px 20px;">Show All</button>
+                <button onclick="filterOffers('IN_PROGRESS')" class="doc-button"
+                    style="background: #f59e0b; color: white; padding: 10px 20px;">In Progress</button>
+                <button onclick="filterOffers('APPROVED')" class="doc-button"
+                    style="background: #10b981; color: white; padding: 10px 20px;">Approved</button>
+                <button onclick="filterOffers('REJECTED')" class="doc-button"
+                    style="background: #ef4444; color: white; padding: 10px 20px;">Rejected</button>
+            </div>
+            <div id="offersResponse"></div>
+        </div>
+
+        <!-- Credit Score Section -->
+        <div id="creditscore" class="section">
+            <h2>📊 Generate Credit Score</h2>
+            <form onsubmit="handleCreditScore(event)">
+                <div class="form-group">
+                    <label>Application ID *</label>
+                    <input type="text" name="appId" required placeholder="e.g., abcd1234-5678-90ef-ghij-klmnopqrstuv">
+                </div>
+                <button type="submit">Generate Credit Score</button>
+            </form>
+            <div id="creditscoreResponse"></div>
+        </div>
+
+        <!-- Process Offer Section -->
+        <div id="processoffer" class="section">
+            <h2>💳 Process Credit Card Offer</h2>
+            <div class="grid">
+                <div>
+                    <h3>Approve Offer</h3>
+                    <form onsubmit="handleProcessOffer(event, 'APPROVED')">
+                        <div class="form-group">
+                            <label>Application ID *</label>
+                            <input type="text" name="appId" required
+                                placeholder="e.g., abcd1234-5678-90ef-ghij-klmnopqrstuv">
+                        </div>
+                        <div class="form-group">
+                            <label>Credit Score *</label>
+                            <input type="number" name="creditScore" required min="300" max="850"
+                                placeholder="e.g., 785">
+                        </div>
+                        <button type="submit" class="btn-approve">Approve Offer</button>
+                    </form>
+                </div>
+                <div>
+                    <h3>Reject Offer</h3>
+                    <form onsubmit="handleProcessOffer(event, 'REJECTED')">
+                        <div class="form-group">
+                            <label>Application ID *</label>
+                            <input type="text" name="appId" required
+                                placeholder="e.g., abcd1234-5678-90ef-ghij-klmnopqrstuv">
+                        </div>
+                        <div class="form-group">
+                            <label>Credit Score *</label>
+                            <input type="number" name="creditScore" required min="300" max="850"
+                                placeholder="e.g., 580">
+                        </div>
+                        <div class="form-group">
+                            <label>Rejection Reason *</label>
+                            <textarea name="rejectReason" required
+                                placeholder="e.g., Credit score below threshold..."></textarea>
+                        </div>
+                        <button type="submit" class="btn-reject">Reject Offer</button>
+                    </form>
+                </div>
+            </div>
+            <div id="processofferResponse"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        let openPreviewUrls = [];
+        let allVerifications = []; // Store all verification data
+        let allOffers = []; // Store all offer data
+
+        function showSection(section) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(section).classList.add('active');
+            event.target.classList.add('active');
+            cleanupPreviewUrls();
+        }
+
+        function cleanupPreviewUrls() {
+            openPreviewUrls.forEach(url => {
+                try {
+                    window.URL.revokeObjectURL(url);
+                } catch (e) {
+                    console.log('Error cleaning up URL:', e);
+                }
+            });
+            openPreviewUrls = [];
+        }
+
+        window.addEventListener('beforeunload', cleanupPreviewUrls);
+
+        function displayResponse(elementId, data, isError = false) {
+            const el = document.getElementById(elementId);
+            const className = isError ? 'error' : 'success';
+            el.innerHTML = `
+                <div class="response ${className}">
+                    <h3>${isError ? '❌ Error' : '✅ Success'}</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                </div>
+            `;
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {
+                email: formData.get('email'),
+                password: formData.get('password')
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('authToken').value = result.token;
+                    displayResponse('loginResponse', result);
+                } else {
+                    displayResponse('loginResponse', result, true);
+                }
+            } catch (error) {
+                displayResponse('loginResponse', { error: error.message }, true);
+            }
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+            const token = document.getElementById('authToken').value;
+            if (!token) {
+                alert('Please login first to get a token');
+                return;
+            }
+
+            const formData = new FormData(e.target);
+
+            try {
+                const response = await fetch(`${API_BASE}/api/application/submit`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    displayResponse('submitResponse', result);
+                } else {
+                    displayResponse('submitResponse', result, true);
+                }
+            } catch (error) {
+                displayResponse('submitResponse', { error: error.message }, true);
+            }
+        }
+
+        async function handleMyApplications() {
+            const token = document.getElementById('authToken').value;
+            if (!token) {
+                alert('Please login first to get a token');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/application/my-applications`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    displayResponse('myappsResponse', result);
+                } else {
+                    displayResponse('myappsResponse', result, true);
+                }
+            } catch (error) {
+                displayResponse('myappsResponse', { error: error.message }, true);
+            }
+        }
+
+        async function handleAllApplications() {
+            const token = document.getElementById('authToken').value;
+            if (!token) {
+                alert('Please login first to get a token');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/onboarding/all`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    displayResponse('allappsResponse', result);
+                } else {
+                    displayResponse('allappsResponse', result, true);
+                }
+            } catch (error) {
+                displayResponse('allappsResponse', { error: error.message }, true);
+            }
+        }
+
+        async function handleGetApplication(e) {
+            e.preventDefault();
+            const token = document.getElementById('authToken').value;
+            if (!token) {
+                alert('Please login first to get a token');
+                return;
+            }
+
+            const formData = new FormData(e.target);
+            const appId = formData.get('appId');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/application/${appId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    displayResponse('getappResponse', result);
+                } else {
+                    displayResponse('getappResponse', result, true);
+                }
+            } catch (error) {
+                displayResponse('getappResponse', { error: error.message }, true);
+            }
+        }
+
+        async function loadApplicationData() {
+            const appId = document.getElementById('updateAppId').value;
+            const token = document.getElementById('authToken').value;
+
+            if (!appId) {
+                alert('Please enter an Application ID');
+                return;
+            }
+
+            if (!token) {
+                alert('Please login first to get a token');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/application/${appId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    document.getElementById('updateFullName').value = data.fullName || '';
+                    document.getElementById('updateEmail').value = data.email || '';
+                    document.getElementById('updatePhoneNumber').value = data.phoneNumber || '';
+                    document.getElementById('updateDateOfBirth').value = data.dateOfBirth || '';
+                    document.getElementById('updateAddress').value = data.address || '';
+                    document.getElementById('updateCardType').value = data.cardType || '';
+
+                    const filesInfo = document.getElementById('currentFilesInfo');
+                    filesInfo.style.display = 'block';
+                    filesInfo.className = 'file-info';
+                    filesInfo.innerHTML = `
+                        <h4>📎 Current Documents</h4>
+                        <div class="file-row">
+                            <strong>Aadhar:</strong>
+                            ${data.aadharFilename
+                            ? `<span>${data.aadharFilename}</span>
+                                   <button type="button" onclick="previewDocument('${appId}', 'aadhar', '${data.aadharFilename}')" class="doc-button btn-view">👁 View</button>
+                                   <button type="button" onclick="downloadDocument('${appId}', 'aadhar', '${data.aadharFilename}')" class="doc-button btn-download">📥 Download</button>`
+                            : '<span style="color: #9ca3af;">Not uploaded</span>'}
+                        </div>
+                        <div class="file-row">
+                            <strong>PAN:</strong>
+                            ${data.panFilename
+                            ? `<span>${data.panFilename}</span>
+                                   <button type="button" onclick="previewDocument('${appId}', 'pan', '${data.panFilename}')" class="doc-button btn-view">👁 View</button>
+                                   <button type="button" onclick="downloadDocument('${appId}', 'pan', '${data.panFilename}')" class="doc-button btn-download">📥 Download</button>`
+                            : '<span style="color: #9ca3af;">Not uploaded</span>'}
+                        </div>
+                        <div class="file-row">
+                            <strong>Income Proof:</strong>
+                            ${data.incomeProofFilename
+                            ? `<span>${data.incomeProofFilename}</span>
+                                   <button type="button" onclick="previewDocument('${appId}', 'income-proof', '${data.incomeProofFilename}')" class="doc-button btn-view">👁 View</button>
+                                   <button type="button" onclick="downloadDocument('${appId}', 'income-proof', '${data.incomeProofFilename}')" class="doc-button btn-download">📥 Download</button>`
+                            : '<span style="color: #9ca3af;">Not uploaded</span>'}
+                        </div>
+                    `;
+
+                    alert('✅ Application data loaded successfully!\n\nName: ' + data.fullName + '\nEmail: ' + data.email + '\nPhone: ' + data.phoneNumber);
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + (error.error || 'Application not found'));
+                }
+            } catch (error) {
+                console.error('Load error:', error);
+                alert('Error loading application: ' + error.message);
+            }
+        }
+
+        async function handleUpdate(e) {
+            e.preventDefault();
+            const token = document.getElementById('authToken').value;
+            if (!token) {
+                alert('Please login first to get a token');
+                return;
+            }
+
+            const formData = new FormData(e.target);
+            const appId = formData.get('appId');
+            formData.delete('appId');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/application/update/${appId}`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    displayResponse('updateResponse', result);
+                    cleanupPreviewUrls();
+                } else {
+                    displayResponse('updateResponse', result, true);
+                }
+            } catch (error) {
+                displayResponse('updateResponse', { error: error.message }, true);
+            }
+        }
+
+        async function handlePendingVerifications() {
+            const token = document.getElementById('authToken').value;
+            if (!token) {
+                alert('Please login first to get a token');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/document-verification/pending`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    allVerifications = result; // Store for filtering
+                    displayVerifications(result);
+                } else {
+                    displayResponse('pendingResponse', result, true);
+                }
+            } catch (error) {
+                displayResponse('pendingResponse', { error: error.message }, true);
+            }
+        }
+
+        function filterVerifications(status) {
+            if (allVerifications.length === 0) {
+                alert('Please load applications first by clicking "Load All Applications"');
+                return;
+            }
+
+            let filtered = allVerifications;
+            if (status !== 'ALL') {
+                filtered = allVerifications.filter(app => app.documentVerificationStatus === status);
+            }
+
+            displayVerifications(filtered, status);
+        }
+
+        function displayVerifications(applications, filterStatus = 'ALL') {
+            const el = document.getElementById('pendingResponse');
+
+            if (applications.length === 0) {
+                el.innerHTML = `
+                    <div class="response" style="border-left-color: #f59e0b;">
+                        <h3>ℹ No Applications Found</h3>
+                        <p>No applications found${filterStatus !== 'ALL' ? ` with status: ${filterStatus}` : ''}.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <div class="response success">
+                    <h3>✅ Found ${applications.length} Application(s)${filterStatus !== 'ALL' ? ` (Status: ${filterStatus})` : ''}</h3>
+                    <div style="margin-top: 20px;">
+            `;
+
+            applications.forEach(app => {
+                const statusClass = app.documentVerificationStatus === 'IN_PROGRESS' ? 'status-in-progress' :
+                    app.documentVerificationStatus === 'APPROVED' ? 'status-approved' : 'status-rejected';
+
+                html += `
+                    <div class="app-card">
+                        <h4>${app.fullName} 
+                            <span class="status-badge ${statusClass}">${app.documentVerificationStatus}</span>
+                        </h4>
+                        <div class="app-info">
+                            <div class="app-info-item"><strong>App ID:</strong> ${app.appId}</div>
+                            <div class="app-info-item"><strong>Email:</strong> ${app.email}</div>
+                            <div class="app-info-item"><strong>Phone:</strong> ${app.phoneNumber}</div>
+                            <div class="app-info-item"><strong>Card Type:</strong> ${app.cardType}</div>
+                            <div class="app-info-item"><strong>DOB:</strong> ${app.dateOfBirth}</div>
+                            <div class="app-info-item"><strong>Submitted:</strong> ${new Date(app.submittedAt).toLocaleString()}</div>
+                        </div>
+                        <div class="app-info-item" style="margin-top: 10px;"><strong>Address:</strong> ${app.address}</div>
+                        <div class="action-buttons">
+                            <button onclick="viewApplicationDocs('${app.appId}', '${app.aadharFilename}', '${app.panFilename}', '${app.incomeProofFilename}')" class="btn-info">📄 View Documents</button>
+                            ${app.documentVerificationStatus === 'IN_PROGRESS' ? `
+                                <button onclick="quickApprove('${app.appId}')" class="btn-approve">✅ Approve</button>
+                                <button onclick="quickReject('${app.appId}')" class="btn-reject">❌ Reject</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+                    <details style="margin-top: 20px;">
+                        <summary style="cursor: pointer; color: #059669; font-weight: 600;">View Raw JSON</summary>
+                        <pre>${JSON.stringify(applications, null, 2)}</pre>
+                    </details>
+                </div>
+            `;
+
+            el.innerHTML = html;
+        }
+
+        async function handleVerify(e, action) {
+            e.preventDefault();
+            const token = document.getElementById('authToken').value;
+            if (!token) {
+                alert('Please login first to get a token');
+                return;
+            }
+
+            const formData = new FormData(e.target);
+            const data = {
+                appId: formData.get('appId'),
+                action: action
+            };
+
+            if (action === 'REJECTED') {
+                data.rejectReason = formData.get('rejectReason');
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/document-verification/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    displayResponse('verifyResponse', result);
+                } else {
+                    displayResponse('verifyResponse', result, true);
+                }
+            } catch (error) {
+                displayResponse('verifyResponse', { error: error.message }, true);
+            }
+        }
+
+        async function handleReadyForOffers() {
+            const token = document.getElementById('authToken').value;
+            if (!token) {
+                alert('Please login first to get a token');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/offer/approved`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    allOffers = result; // Store for filtering
+                    displayOffers(result);
+                } else {
+                    displayResponse('offersResponse', result, true);
+                }
+            } catch (error) {
+                displayResponse('offersResponse', { error: error.message }, true);
+            }
+        }
+
+        function filterOffers(status) {
+            if (allOffers.length === 0) {
+                alert('Please load offers first by clicking "Load All Offers"');
+                return;
+            }
+
+            let filtered = allOffers;
+            if (status !== 'ALL') {
+                filtered = allOffers.filter(app => app.offerStatus === status);
+            }
+
+            displayOffers(filtered, status);
+        }
+
+        function displayOffers(applications, filterStatus = 'ALL') {
+            const el = document.getElementById('offersResponse');
+
+            if (applications.length === 0) {
+                el.innerHTML = `
+                    <div class="response" style="border-left-color: #f59e0b;">
+                        <h3>ℹ No Applications Found</h3>
+                        <p>No applications found${filterStatus !== 'ALL' ? ` with offer status: ${filterStatus}` : ''}.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <div class="response success">
+                    <h3>✅ Found ${applications.length} Application(s)${filterStatus !== 'ALL' ? ` (Offer Status: ${filterStatus})` : ''}</h3>
+                    <div style="margin-top: 20px;">
+            `;
+
+            applications.forEach(app => {
+                const statusClass = app.offerStatus === 'IN_PROGRESS' ? 'status-in-progress' :
+                    app.offerStatus === 'APPROVED' ? 'status-approved' : 'status-rejected';
+
+                html += `
+                    <div class="app-card">
+                        <h4>${app.fullName} 
+                            <span class="status-badge ${statusClass}">Offer: ${app.offerStatus}</span>
+                            <span class="status-badge status-approved">Docs: ${app.documentVerificationStatus}</span>
+                        </h4>
+                        <div class="app-info">
+                            <div class="app-info-item"><strong>App ID:</strong> ${app.appId}</div>
+                            <div class="app-info-item"><strong>Email:</strong> ${app.email}</div>
+                            <div class="app-info-item"><strong>Phone:</strong> ${app.phoneNumber}</div>
+                            <div class="app-info-item"><strong>Card Type:</strong> ${app.cardType}</div>
+                            <div class="app-info-item"><strong>DOB:</strong> ${app.dateOfBirth}</div>
+                            <div class="app-info-item"><strong>Updated:</strong> ${new Date(app.updatedAt).toLocaleString()}</div>
+                        </div>
+                        <div class="app-info-item" style="margin-top: 10px;"><strong>Address:</strong> ${app.address}</div>
+                        <div class="action-buttons">
+                            <button onclick="generateCreditScore('${app.appId}')" class="btn-info">📊 Generate Credit Score</button>
+                            ${app.offerStatus === 'IN_PROGRESS' ? `
+                                <button onclick="quickApproveOffer('${app.appId}')" class="btn-approve">✅ Approve Offer</button>
+                                <button onclick="quickRejectOffer('${app.appId}')" class="btn-reject">❌ Reject Offer</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+                    <details style="margin-top: 20px;">
+                        <summary style="cursor: pointer; color: #059669; font-weight: 600;">View Raw JSON</summary>
+                        <pre>${JSON.stringify(applications, null, 2)}</pre>
+                    </details>
+                </div>
+            `;
+
+            el.innerHTML = html;
+        }
+
+        async function handleCreditScore(e) {
+            e.preventDefault();
+            const token = document.getElementById('authToken').value;
+            if (!token) {
+                alert('Please login first to get a token');
+                return;
+            }
+
+            const formData = new FormData(e.target);
+            const appId = formData.get('appId');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/offer/credit-score/${appId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    const el = document.getElementById('creditscoreResponse');
+                    el.innerHTML = `
+                        <div class="response success">
+                            <h3>✅ Credit Score Generated</h3>
+                            <div class="credit-score-box">
+                                <h3>${result.fullName}</h3>
+                                <div class="score">${result.creditScore}</div>
+                                <div class="rating">${result.creditRating}</div>
+                                <p style="margin-top: 10px; opacity: 0.8;">Generated at: ${new Date(result.generatedAt).toLocaleString()}</p>
+                            </div>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    displayResponse('creditscoreResponse', result, true);
+                }
+            } catch (error) {
+                displayResponse('creditscoreResponse', { error: error.message }, true);
+            }
+        }
+
+        async function handleProcessOffer(e, action) {
+            e.preventDefault();
+            const token = document.getElementById('authToken').value;
+            if (!token) {
+                alert('Please login first to get a token');
+                return;
+            }
+
+            const formData = new FormData(e.target);
+            const data = {
+                appId: formData.get('appId'),
+                action: action,
+                creditScore: parseInt(formData.get('creditScore'))
+            };
+
+            if (action === 'REJECTED') {
+                data.rejectReason = formData.get('rejectReason');
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/offer/process`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    displayResponse('processofferResponse', result);
+                } else {
+                    displayResponse('processofferResponse', result, true);
+                }
+            } catch (error) {
+                displayResponse('processofferResponse', { error: error.message }, true);
+            }
+        }
+
+        async function previewDocument(appId, docType, filename) {
+            const token = document.getElementById('authToken').value;
+            if (!token) {
+                alert('Please login first to get a token');
+                return;
+            }
+
+            try {
+                const button = event.target;
+                const originalText = button.innerHTML;
+                button.innerHTML = '⏳ Loading...';
+                button.disabled = true;
+
+                const response = await fetch(`${API_BASE}/api/application/${appId}/download/${docType}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+
+                    openPreviewUrls.push(url);
+
+                    const newWindow = window.open(url, '_blank');
+
+                    if (newWindow) {
+                        const checkWindow = setInterval(() => {
+                            if (newWindow.closed) {
+                                clearInterval(checkWindow);
+                                window.URL.revokeObjectURL(url);
+                                const index = openPreviewUrls.indexOf(url);
+                                if (index > -1) {
+                                    openPreviewUrls.splice(index, 1);
+                                }
+                            }
+                        }, 1000);
+                    }
+
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                } else {
+                    const result = await response.json();
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                    alert('Error: ' + (result.error || 'Failed to load document'));
+                }
+            } catch (error) {
+                event.target.innerHTML = '👁 View';
+                event.target.disabled = false;
+                alert('Error previewing document: ' + error.message);
+            }
+        }
+
+        async function downloadDocument(appId, docType, filename) {
+            const token = document.getElementById('authToken').value;
+            if (!token) {
+                alert('Please login first to get a token');
+                return;
+            }
+
+            try {
+                const button = event.target;
+                const originalText = button.innerHTML;
+                button.innerHTML = '⏳ Downloading...';
+                button.disabled = true;
+
+                const response = await fetch(`${API_BASE}/api/application/${appId}/download/${docType}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename || `${docType}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+
+                    setTimeout(() => {
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    }, 100);
+
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                } else {
+                    const result = await response.json();
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                    alert('Error: ' + (result.error || 'Failed to download document'));
+                }
+            } catch (error) {
+                event.target.innerHTML = '📥 Download';
+                event.target.disabled = false;
+                alert('Error downloading document: ' + error.message);
+            }
+        }
+
+        // Quick Actions for Document Verification
+        function viewApplicationDocs(appId, aadhar, pan, income) {
+            const html = `
+                <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="color: #0369a1; margin-bottom: 15px;">📄 Documents for App ID: ${appId}</h3>
+                    <div class="file-row">
+                        <strong>Aadhar:</strong>
+                        ${aadhar ? `
+                            <span>${aadhar}</span>
+                            <button onclick="previewDocument('${appId}', 'aadhar', '${aadhar}')" class="doc-button btn-view">👁 View</button>
+                            <button onclick="downloadDocument('${appId}', 'aadhar', '${aadhar}')" class="doc-button btn-download">📥 Download</button>
+                        ` : '<span style="color: #9ca3af;">Not uploaded</span>'}
+                    </div>
+                    <div class="file-row">
+                        <strong>PAN:</strong>
+                        ${pan ? `
+                            <span>${pan}</span>
+                            <button onclick="previewDocument('${appId}', 'pan', '${pan}')" class="doc-button btn-view">👁 View</button>
+                            <button onclick="downloadDocument('${appId}', 'pan', '${pan}')" class="doc-button btn-download">📥 Download</button>
+                        ` : '<span style="color: #9ca3af;">Not uploaded</span>'}
+                    </div>
+                    <div class="file-row">
+                        <strong>Income Proof:</strong>
+                        ${income ? `
+                            <span>${income}</span>
+                            <button onclick="previewDocument('${appId}', 'income-proof', '${income}')" class="doc-button btn-view">👁 View</button>
+                            <button onclick="downloadDocument('${appId}', 'income-proof', '${income}')" class="doc-button btn-download">📥 Download</button>
+                        ` : '<span style="color: #9ca3af;">Not uploaded</span>'}
+                    </div>
+                </div>
+            `;
+
+            const existingDocs = document.querySelector('.file-row')?.parentElement;
+            if (existingDocs && existingDocs.style.background === 'rgb(240, 249, 255)') {
+                existingDocs.remove();
+            } else {
+                const targetCard = event.target.closest('.app-card');
+                targetCard.insertAdjacentHTML('beforeend', html);
+            }
+        }
+
+        async function quickApprove(appId) {
+            const token = document.getElementById('authToken').value;
+            if (!token) {
+                alert('Please login first');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to APPROVE documents for application ${appId}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/document-verification/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        appId: appId,
+                        action: 'APPROVED'
+                    })
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('✅ Documents approved successfully!');
+                    handlePendingVerifications(); // Refresh list
+                } else {
+                    alert('❌ Error: ' + (result.error || 'Failed to approve'));
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        async function quickReject(appId) {
+            const token = document.getElementById('authToken').value;
+            if (!token) {
+                alert('Please login first');
+                return;
+            }
+
+            const reason = prompt('Enter rejection reason:');
+            if (!reason) {
+                alert('Rejection reason is required');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/document-verification/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization':` Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        appId: appId,
+                        action: 'REJECTED',
+                        rejectReason: reason
+                    })
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('✅ Documents rejected successfully!');
+                    handlePendingVerifications(); // Refresh list
+                } else {
+                    alert('❌ Error: ' + (result.error || 'Failed to reject'));
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        // Quick Actions for Offers
+        async function generateCreditScore(appId) {
+            const token = document.getElementById('authToken').value;
+            if (!token) {
+                alert('Please login first');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/offer/credit-score/${appId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(`📊 Credit Score Generated!\n\nName: ${result.fullName}\nScore: ${result.creditScore}\nRating: ${result.creditRating}`);
+                } else {
+                    alert('❌ Error: ' + (result.error || 'Failed to generate credit score'));
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        async function quickApproveOffer(appId) {
+            const token = document.getElementById('authToken').value;
+            if (!token) {
+                alert('Please login first');
+                return;
+            }
+
+            const creditScore = prompt('Enter credit score (300-850):', '750');
+            if (!creditScore) return;
+
+            const score = parseInt(creditScore);
+            if (score < 300 || score > 850) {
+                alert('Credit score must be between 300 and 850');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to APPROVE offer for application ${appId} with credit score ${score}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/offer/process`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        appId: appId,
+                        action: 'APPROVED',
+                        creditScore: score
+                    })
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('✅ Offer approved successfully!');
+                    handleReadyForOffers(); // Refresh list
+                } else {
+                    alert('❌ Error: ' + (result.error || 'Failed to approve offer'));
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        async function quickRejectOffer(appId) {
+            const token = document.getElementById('authToken').value;
+            if (!token) {
+                alert('Please login first');
+                return;
+            }
+
+            const creditScore = prompt('Enter credit score (300-850):', '580');
+            if (!creditScore) return;
+
+            const score = parseInt(creditScore);
+            if (score < 300 || score > 850) {
+                alert('Credit score must be between 300 and 850');
+                return;
+            }
+
+            const reason = prompt('Enter rejection reason:');
+            if (!reason) {
+                alert('Rejection reason is required');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/offer/process`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        appId: appId,
+                        action: 'REJECTED',
+                        creditScore: score,
+                        rejectReason: reason
+                    })
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('✅ Offer rejected successfully!');
+                    handleReadyForOffers(); // Refresh list
+                } else {
+                    alert('❌ Error: ' + (result.error || 'Failed to reject offer'));
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+
+</html>
