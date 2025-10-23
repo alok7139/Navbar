@@ -1,31 +1,296 @@
- <style>{`
-        .translate-up {
-          transform: translateY(-20px);
-        }
-        .opacity-0 {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        .opacity-100 {
-          opacity: 1;
-          transform: translateY(0);
-        }
-        @media (max-width: 576px) {
-          h1 {
-            font-size: 1.6rem;
-          }
-          p {
-            font-size: 1rem;
-          }
-        }
-      `}</style>
+import React from 'react';
+import 'bootstrap/dist/css/bootstrap.min.css';
+
+const CreditCardPage = () => {
+  return (
+    <div className="bg-light text-dark">
+      {/* Hero Section */}
+      <section className="container py-5 text-center text-md-start">
+        <div className="row justify-content-center align-items-center">
+          <div className="col-md-6">
+            <h1 className="display-5 fw-bold mb-3">
+              Unlock Your Potential with a <br />
+              <span className="text-primary">
+                Standard Chartered Credit Card
+              </span>
+            </h1>
+            <p className="lead mb-4 text-muted">
+              Discover a world of rewards, benefits, and financial flexibility.
+            </p>
+            <a href="#apply" className="btn btn-primary btn-lg px-4 shadow-sm">
+              Apply Online Today
+            </a>
+          </div>
+
+          <div className="col-md-6 d-flex justify-content-center mt-4 mt-md-0">
+            <div
+              className="card shadow-lg border-0"
+              style={{
+                width: '350px',
+                borderRadius: '1.5rem',
+                background: 'linear-gradient(135deg,#6c63ff 0%,#2163b1 100%)',
+                color: 'white',
+                transition: 'transform 0.4s ease, box-shadow 0.4s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-10px)';
+                e.currentTarget.style.boxShadow = '0 25px 45px rgba(0,0,0,0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 10px 25px rgba(0,0,0,0.1)';
+              }}
+            >
+              <div className="card-body p-4">
+                <h5 className="card-title mb-4 fw-semibold">
+                  Standard Chartered
+                </h5>
+                <div className="d-flex align-items-center mb-3">
+                  <div className="me-3">
+                    <svg width="40" height="24">
+                      <rect width="40" height="24" rx="6" fill="#ffffff99" />
+                    </svg>
+                  </div>
+                  <span className="fw-bold fs-5">**** **** **** 1234</span>
+                </div>
+                <div className="d-flex justify-content-between">
+                  <small>
+                    <span className="d-block text-white-50">Card Holder</span>
+                    <span className="fw-bold">Your Name</span>
+                  </small>
+                  <small>
+                    <span className="d-block text-white-50">Valid Thru</span>
+                    <span className="fw-bold">12/29</span>
+                  </small>
+                </div>
+                <div className="mt-4 text-end">
+                  <span className="badge bg-light text-dark px-3 py-2 shadow-sm">
+                    Visa
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      
+
+      {/* Key Benefits */}
+      <section className="container mb-5">
+  <h2 className="text-center fw-bold mb-4">Key Benefits</h2>
+  <div className="row g-4 justify-content-center">
+    {[
+      {
+        icon: "🏅",
+        title: "Exclusive Rewards",
+        text: "Earn Rewards points on every transaction and redeem easily.",
+      },
+      {
+        icon: "🔒",
+        title: "Enhanced Security",
+        text: "Enjoy secure transactions with advanced fraud protection.",
+      },
+      {
+        icon: "🌐",
+        title: "Global Acceptance",
+        text: "Use your card worldwide across millions of merchants.",
+      },
+      {
+        icon: "⚡",
+        title: "Instant Approval",
+        text: "Get instant approval with our seamless online process.",
+      },
+    ].map((b, i) => (
+      <div key={i} className="col-12 col-md-6 col-lg-3">
+        <div
+          className="card h-100 shadow-sm text-center border-0 hover-card"
+          style={{
+            transition: "all 0.3s ease",
+          }}
+        >
+          <div className="card-body">
+            <span className="display-4 text-primary mb-3">{b.icon}</span>
+            <h5 className="card-title">{b.title}</h5>
+            <p className="card-text">{b.text}</p>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
 
 
-      .card-hover {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
+      {/* Apply Steps */}
+      <section className="container mb-5">
+  <h2 className="text-center fw-bold mb-4">
+    Applying for Your Card is Simple
+  </h2>
+  <div className="row g-4 justify-content-center">
+    {[
+      {
+        icon: "✍️",
+        title: "Fill Out Our Easy Online Form",
+        text: "Complete our secure application in minutes with your basic personal and financial details.",
+      },
+      {
+        icon: "⤢",
+        title: "Submit Documents Digitally",
+        text: "No paperwork needed. Easily upload identity and income proof for quick verification.",
+      },
+      {
+        icon: "✔️",
+        title: "Get Quick Approval",
+        text: "Receive an instant decision and quick approval in minutes, not weeks.",
+      },
+      {
+        icon: "💳",
+        title: "Get Quick Delivery",
+        text: "Receive your new credit card delivered right to your doorstep.",
+      },
+    ].map((s, i) => (
+      <div key={i} className="col-12 col-md-6 col-lg-3">
+        <div
+          className="card h-100 shadow-sm border-0 text-center hover-card"
+          style={{
+            transition: "all 0.3s ease",
+          }}
+        >
+          <div className="card-body">
+            <span className="display-4 text-success mb-3">{s.icon}</span>
+            <h5 className="card-title">{s.title}</h5>
+            <p>{s.text}</p>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+  <div className="text-center mt-4">
+    <button className="btn btn-success btn-lg px-5">
+      Start Your Application Now
+    </button>
+  </div>
+</section>
 
-.card-hover:hover {
-  transform: translateY(-10px); /* pop up effect */
-  box-shadow: 0 20px 30px rgba(0, 0, 0, 0.2); /* stronger shadow */
-}
+<style>{`
+  .hover-card {
+    transition: all 0.35s ease;
+  }
+  .hover-card:hover {
+    transform: translateY(-10px) scale(1.05);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  }
+`}</style>
+
+      {/* Card Options */}
+      <section className="container mb-5">
+        <h2 className="text-center fw-bold mb-5">Choose Your Perfect Card</h2>
+        <div className="row g-4 justify-content-center">
+          {[
+            {
+              tier: 'Premium',
+              title: 'Platinum Rewards',
+              bg: 'linear-gradient(135deg,#212f44 0%,#4a6377 100%)',
+              annualFee: '$199',
+              limit: '$25,000',
+              rewards: '3%',
+              apr: '15.99%',
+              features: [
+                'Airport Lounge Access',
+                'Concierge Service',
+                'Travel Insurance',
+              ],
+            },
+            {
+              tier: 'Standard',
+              title: 'Gold Cashback',
+              bg: 'linear-gradient(135deg,#bb7119 0%,#8f5d1c 100%)',
+              annualFee: '$99',
+              limit: '$15,000',
+              rewards: '2%',
+              apr: '17.99%',
+              features: [
+                'Cashback on Dining',
+                'Shopping Discounts',
+                'Fuel Rewards',
+              ],
+            },
+            {
+              tier: 'Basic',
+              title: 'Silver Starter',
+              bg: 'linear-gradient(135deg,#545e69 0%,#808087 100%)',
+              annualFee: '$0',
+              limit: '$5,000',
+              rewards: '1%',
+              apr: '19.99%',
+              features: [
+                'No Annual Fee',
+                'Contactless Payment',
+                'Online Security',
+              ],
+            },
+          ].map((card, i) => (
+            <div className="col-12 col-md-6 col-lg-4" key={i}>
+              <div
+                className="card shadow-lg border-0 h-100 hover-zoom"
+                style={{
+                  transition: 'transform 0.4s ease, box-shadow 0.4s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-10px)';
+                  e.currentTarget.style.boxShadow =
+                    '0 25px 45px rgba(0,0,0,0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow =
+                    '0 10px 25px rgba(0,0,0,0.1)';
+                }}
+              >
+                <div
+                  className="card-body text-white"
+                  style={{
+                    background: card.bg,
+                    borderRadius: '1.5rem',
+                  }}
+                >
+                  <h6 className="opacity-75">{card.tier}</h6>
+                  <h4 className="fw-bold">{card.title}</h4>
+                  <p className="mb-0">**** **** **** 1234</p>
+                  <p className="opacity-75">Valid Thru: 12/27</p>
+                </div>
+                <ul className="list-group list-group-flush">
+                  <li className="list-group-item">
+                    <b>{card.annualFee}</b> Annual Fee
+                  </li>
+                  <li className="list-group-item">
+                    <b>{card.limit}</b> Credit Limit
+                  </li>
+                  <li className="list-group-item">
+                    <b>{card.rewards}</b> Rewards Rate
+                  </li>
+                  <li className="list-group-item">
+                    <b>{card.apr}</b> APR
+                  </li>
+                  <li className="list-group-item">
+                    <b>Key Features:</b>
+                    <ul className="mt-2 text-success">
+                      {card.features.map((f, j) => (
+                        <li key={j}>{f}</li>
+                      ))}
+                    </ul>
+                  </li>
+                </ul>
+                <div className="card-footer bg-white border-0 text-center">
+                  <button className="btn btn-primary w-100">Apply Now</button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+};
+
+export default CreditCardPage;
