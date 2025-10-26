@@ -1,0 +1,62 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Home, User, FileText, Edit, CheckCircle, TrendingUp } from 'lucide-react';
+import { Clock as ClockIcon } from 'lucide-react';
+import './Sidebar.css';
+
+const Sidebar = ({ sidebarOpen, toggleSidebar }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  const [role, setRole] = useState(localStorage.getItem("SALES"));
+
+  useEffect(() => {
+    const handleStorage = () => setRole(localStorage.getItem("userRole"));
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  const menuItems = role === 'sales'
+    ? [
+        { name: 'Dashboard', path: '/dashboard', icon: <Home size={20} /> },
+        { name: 'On Boarding', path: '/onboarding', icon: <User size={20} /> },
+        // { name: 'Edit Application', path: '/edit/:id', icon: <Edit size={20} /> },
+        { name: 'Document Verification', path: '/doc-verification', icon: <FileText size={20} /> },
+        { name: 'Offer Confirmation', path: '/offer', icon: <CheckCircle size={20} /> },
+        { name: 'Reporting Page', path: '/report', icon: <TrendingUp size={20} /> }
+      ]
+    : [
+        { name: 'Dashboard', path: '/user-dashboard', icon: <Home size={20} /> },
+        { name: 'Start Application', path: '/apply', icon: <FileText size={20} /> },
+        { name: 'Track Status', path: '/status', icon: <ClockIcon size={20} /> }
+      ];
+
+  const handleMenuClick = (path) => {
+    navigate(path);
+    if (window.innerWidth <= 768) toggleSidebar();
+  };
+
+  return (
+    <>
+      <aside className={`dash-sidebar ${sidebarOpen ? 'dash-sidebar-open' : ''}`}>
+        <ul className="dash-menu">
+          {menuItems.map((item, index) => (
+            <li
+              key={index}
+              className={`dash-menu-item ${location.pathname.startsWith(item.path) ? 'dash-menu-item-active' : ''}`}
+              style={{ animationDelay: `${index * 0.1}s` }}
+              onClick={() => handleMenuClick(item.path)}
+            >
+              <span className="dash-menu-icon">{item.icon}</span>
+              <span className="dash-menu-text">{item.name}</span>
+            </li>
+          ))}
+        </ul>
+      </aside>
+
+      {sidebarOpen && <div className="dash-overlay" onClick={toggleSidebar}></div>}
+    </>
+  );
+};
+
+export default Sidebar;
