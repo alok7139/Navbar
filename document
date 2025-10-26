@@ -1,0 +1,168 @@
+import React, {useState} from "react";
+import PersonalDetails from "./PersonalDetails";
+import DocumentForm from "./DocumentForm";
+import "./Documents.css";
+import { Link } from "react-router-dom";
+
+
+
+function Documents(){
+    const[formData, setFormData] = useState({
+        fullName: "",
+        dateOfBirth: "",
+        phoneNumber: "",
+        email: "",
+        address: "",
+        userIncome:"",
+        cardType: "",
+        aadharFilename: null,
+        panFilename: null,
+        incomeProofFilename: null,
+    });
+
+    const handleChange = (field, value) => {
+        setFormData((prev) => ({ ...prev,[field]: value}));
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        console.log("Form Data Saved:",formData);
+        alert("Documents saved! Bureau Creadit Check initiated.");
+    };
+
+    return(
+        <div className="document-container">
+            <h2 className="gradient-text"> Add New User</h2>
+            <br/>
+            <form onSubmit={handleSubmit}>
+
+                <PersonalDetails formData={formData} onChange={handleChange} />
+                <DocumentForm formData={formData} onChange={handleChange} />
+
+                <div className="declaration">
+                    <div className="form-check">
+                        <input type="checkbox" checked={formData.declareInfo}
+                        onChange={(e) => handleChange("declareInfo", e.target.checked)} />
+
+                        <label>I declare that the above information is true.</label>
+                    </div>
+
+                    <div className="form-check">
+                        <input type="checkbox" checked={formData.authorize}
+                        onChange={(e) => handleChange("authorize", e.target.checked)} />
+
+                        <label>I authorize the bank to verify my details.</label>
+                    </div>
+                </div>
+
+                <div className="actions">
+                    <button type="submit" className="save-btn" style={{background:"linear-gradient(to bottom, #007b8f, #00434e)"}}>Save</button>
+                    <Link to={'/doc-verification'}><button style={{borderRadius:"20px",display:"flex" , justifyContent:"center" ,alignContent:"center" ,padding:"12px"}} type="button" className="verify-btn">Verify</button></Link>
+                    <button type="button" className="draft-btn">Save as Draft</button>
+                </div>
+
+            </form>
+
+        </div>
+    )
+}
+export default Documents;
+
+
+
+
+import React from "react";
+
+function PersonalDetails({ formData, onChange }){
+    return (
+        <div className="personal-details card">
+            <h3> Personal Details</h3>
+
+            <div className="form-group">
+                <label>Name :</label>
+                <input type="text" placeholder="Enter Full Name" value={formData.fullName} name="fullName"
+                onChange={(e) => onChange("name" , e.target.value)} />
+            </div>
+
+            <div className="form-group">
+                <label>Date of Birth :</label>
+                <input type="date" value={formData.dateOfBirth} name="dateOfBirth"
+                onChange={(e) => onChange("dob" , e.target.value)} />
+            </div>
+
+            <div className="form-group">
+                <label>Mobile Number :</label>
+                <input type="text" name="phoneNumber" placeholder="Enter Mobile Number" value={formData.phoneNumber} 
+                onChange={(e) => onChange("mobile" , e.target.value)} />
+            </div>
+
+            <div className="form-group">
+                <label>Email Address :</label>
+                <input type="email" name="email" placeholder="Enter Email" value={formData.email} 
+                onChange={(e) => onChange("email" , e.target.value)} />
+            </div>
+
+            <div className="form-group">
+                <label>Address :</label>
+                <input type="text" name="address" placeholder="Enter Address" value={formData.address} 
+                onChange={(e) => onChange("address" , e.target.value)} />
+            </div>
+
+        
+
+            <div className="form-group">
+                <label>Income</label>
+                <input type="number" name="userIncome"  placeholder="Enter your Income" value={formData.userIncome}
+                onChange={(e) => onChange("income" , e.target.value)} />
+            </div>
+
+            <div className="form-group">
+                <label className="form-label">Card Type </label>
+                <select
+                    name="cardType"
+                    value={formData.cardType}
+                    onChange={(e) => onChange("cardType" , e.target.value)}
+                    className="form-select"
+                  >
+                    <option value="GOLD">Gold Card</option>
+                    <option value="SILVER">Silver Card</option>
+                    <option value="PLATINUM">Platinum Card</option>
+                  </select>
+                
+            </div>
+
+
+
+           
+
+
+
+        </div>
+    );
+}
+export default PersonalDetails;
+
+
+
+import React from "react";
+import DocumentUpload from "./DocumentUpload";
+ 
+function DocumentForm({formData, onChange}){
+    return(
+        <div className="document-form card">
+            <h3> Upload Documents</h3>
+ 
+            <DocumentUpload label="Identity Proof (Passport / Aadhar)" onChange={(file) => onChange("identityProof", file)}
+            />
+ 
+            <DocumentUpload label="Address Proof (Income proof)" onChange={(file) => onChange("addressProof", file)}
+            />
+ 
+            <DocumentUpload label="Income Proof (Pan card)" onChange={(file) => onChange("incomeProof", file)}
+            />
+ 
+        </div>
+    );
+}
+export default DocumentForm
+  
