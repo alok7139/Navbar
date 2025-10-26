@@ -1,3 +1,42 @@
+const handleSignup = async (e) => {
+  e.preventDefault();
+
+  const { firstName, lastName, email, password } = formData;
+  let newErrors = {};
+
+  if (!firstName.trim()) newErrors.firstName = "Required";
+  if (!lastName.trim()) newErrors.lastName = "Required";
+  if (!validateEmail(email)) newErrors.email = "Invalid email";
+  if (password.length < 6) newErrors.password = "Invalid password";
+
+  if (Object.keys(newErrors).length > 0) {
+    setErrors(newErrors);
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const userData = { firstName, lastName, email, password, role: "user" };
+    const response = await signup(userData);
+
+    if (response.success) {
+      toast.success("Account created successfully!");
+      setTimeout(() => {
+        navigate("/user-dashboard", { replace: true });
+      }, 500);
+    } else {
+      toast.error(response.message || "Signup failed");
+    }
+  } catch (err) {
+    toast.error("Something went wrong");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
