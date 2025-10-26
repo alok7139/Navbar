@@ -1,3 +1,39 @@
+const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const form = new FormData();
+    // Append text fields
+    form.append("fullName", formData.fullName);
+    form.append("dateOfBirth", formData.dateOfBirth);
+    form.append("phoneNumber", formData.phoneNumber);
+    form.append("email", formData.email);
+    form.append("address", formData.address);
+    form.append("userIncome", formData.userIncome);
+    form.append("cardType", formData.cardType);
+    form.append("declareInfo", formData.declareInfo || false);
+    form.append("authorize", formData.authorize || false);
+
+    // Append files
+    if (formData.identityProof) form.append("identityProof", formData.identityProof);
+    if (formData.addressProof) form.append("addressProof", formData.addressProof);
+    if (formData.incomeProof) form.append("incomeProof", formData.incomeProof);
+
+    try {
+        const response = await fetch("http://localhost:8080/api/documents", {
+            method: "POST",
+            body: form,
+        });
+        const result = await response.json();
+        console.log("Response from backend:", result);
+        alert("Documents uploaded successfully!");
+    } catch (error) {
+        console.error("Error uploading documents:", error);
+    }
+};
+
+
+
+
 import React, {useState} from "react";
 import PersonalDetails from "./PersonalDetails";
 import DocumentForm from "./DocumentForm";
