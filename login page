@@ -1,51 +1,15 @@
-const handleSignup = async (e) => {
-  e.preventDefault();
 
-  const { firstName, lastName, email, password } = formData;
-  let newErrors = {};
-
-  if (!firstName.trim()) newErrors.firstName = "Required";
-  if (!lastName.trim()) newErrors.lastName = "Required";
-  if (!validateEmail(email)) newErrors.email = "Invalid email";
-  if (password.length < 6) newErrors.password = "Invalid password";
-
-  if (Object.keys(newErrors).length > 0) {
-    setErrors(newErrors);
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const userData = { firstName, lastName, email, password, role: "user" };
-    const response = await signup(userData);
-
-    if (response.success) {
-      toast.success("Account created successfully!");
-      setTimeout(() => {
-        navigate("/user-dashboard", { replace: true });
-      }, 500);
-    } else {
-      toast.error(response.message || "Signup failed");
-    }
-  } catch (err) {
-    toast.error("Something went wrong");
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Login.css";
 import LandingNavbar from "../Landingpage/NavbarLanding";
 import Footer from "../Footer/Footer";
+import { toast , Bounce } from "react-toastify";
+import { AuthContext } from "../../context/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
+  const {login , signup } = useContext(AuthContext)
   const [animate, setAnimate] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
@@ -64,7 +28,7 @@ const Login = () => {
     lastName: "",
     email: "",
     password: "",
-    role: "user"
+    role: "USER"
   });
 
   useEffect(() => {
@@ -100,104 +64,94 @@ const Login = () => {
     }
   };
   
-  const updateUserRole = (role) => {
-    localStorage.setItem("userRole", role);
-    window.dispatchEvent(new Event('roleChange'));
-  };
+  // const updateUserRole = (role) => {
+  //   localStorage.setItem("role", role);
+  //   window.dispatchEvent(new Event('roleChange'));
+  // };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    
+
     const { email, password, role } = formData;
     let newErrors = {};
-    
-    if (!validateEmail(email)) {
-      newErrors.email = "Invalid email";
-    }
-    
-    if (password.length < 6) {
-      newErrors.password = "Invalid password";
-    }
-    
-    if (!role) {
-      newErrors.role = "Please select a role";
-    }
-    
+
+    if (!validateEmail(email)) newErrors.email = "Invalid email";
+    if (password.length < 6) newErrors.password = "Invalid password";
+    if (!role) newErrors.role = "Please select a role";
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
-    
+
     setLoading(true);
-    
-    setTimeout(() => {
-      const validUsers = {
-        user: { email: "user@example.com", password: "123456" },
-        sales: { email: "sales@example.com", password: "123456" }
-      };
-      
-      if (validUsers[role] && email === validUsers[role].email && password === validUsers[role].password) {
-        
-        updateUserRole(role);
-        
-        showAlertMessage(`Login successful as ${role === 'sales' ? 'Sales User' : 'User'}!`, "success");
+
+    try {
+      const response = await login(email, password); 
+
+      if (response.success) {
+        toast.success(`Login successful as ${response.role}`, {
+          position: "bottom-left",
+          transition: Bounce,
+        });
+
+        // role = response.role;
 
         setTimeout(() => {
-          if (role === "sales") {
-            navigate("/dashboard", { replace: true }); 
-          } else if (role === "user") {
-            navigate("/user-dashboard", { replace: true });
-          }
+          if (response.role === "SALES") navigate("/dashboard", { replace: true });
+          else navigate("/user-dashboard", { replace: true });
         }, 1000);
       } else {
         setLoading(false);
         setErrors({
           email: "Invalid email",
-          password: "Invalid password"
+          password: "Invalid password",
         });
-        showAlertMessage("Invalid credentials for selected role");
+        toast.error(response.message, { position: "bottom-left", transition: Bounce });
       }
-    }, 1500);
+    } catch (err) {
+      setLoading(false);
+      toast.error("Login failed!", { position: "bottom-left", transition: Bounce });
+    }
   };
 
-  const handleSignup = (e) => {
-    e.preventDefault();
-    
-    const { firstName, lastName, email, password } = formData;
-    let newErrors = {};
-    
-    if (!firstName.trim()) {
-      newErrors.firstname = "Required";
-    }
-    
-    if (!lastName.trim()) {
-      newErrors.lastname = "Required";
-    }
-    
-    if (!validateEmail(email)) {
-      newErrors.email = "Invalid email";
-    }
-    
-    if (password.length < 6) {
-      newErrors.password = "Invalid password";
-    }
-    
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-    
-    setLoading(true);
-    
-    setTimeout(() => {
-      updateUserRole("user");
-      console.log("Signup data:", { firstName, lastName, email, password, role: "user" });
-      showAlertMessage("Account created successfully!", "success");
+  const handleSignup = async (e) => {
+  e.preventDefault();
+
+  const { firstName, lastName, email, password } = formData;
+  let newErrors = {};
+
+  if (!firstName.trim()) newErrors.firstName = "Required";
+  if (!lastName.trim()) newErrors.lastName = "Required";
+  if (!validateEmail(email)) newErrors.email = "Invalid email";
+  if (password.length < 6) newErrors.password = "Invalid password";
+
+  if (Object.keys(newErrors).length > 0) {
+    setErrors(newErrors);
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const userData = { firstName, lastName, email, password ,role:"USER"};
+    const response = await signup(userData);
+    // role = response.role;
+
+    if (response.success) {
+      toast.success("Account created successfully!");
       setTimeout(() => {
         navigate("/user-dashboard", { replace: true });
-      }, 1000);
-    }, 1500);
-  };
+      }, 500);
+    } else {
+      toast.error(response.message || "Signup failed");
+    }
+  } catch (err) {
+    toast.error("Something went wrong");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const toggleMode = () => {
     setIsSignup(!isSignup);
@@ -206,7 +160,7 @@ const Login = () => {
       lastName: "",
       email: "",
       password: "",
-      role: "user"
+      role: "USER"
     });
     setErrors({
       email: "",
@@ -250,7 +204,7 @@ const Login = () => {
               <div className="input-wrapper">
                 <input
                   type="text"
-                  name="firstname"
+                  name="firstName"
                   placeholder="First Name"
                   value={formData.firstName}
                   onChange={handleChange}
@@ -262,7 +216,7 @@ const Login = () => {
               <div className="input-wrapper">
                 <input
                   type="text"
-                  name="lastname"
+                  name="lastName"
                   placeholder="Last Name"
                   value={formData.lastName}
                   onChange={handleChange}
@@ -305,18 +259,18 @@ const Login = () => {
               <div className="role-label">Select Role</div>
               <div className="role-selector">
                 <div
-                  className={`role-option ${formData.role === 'user' ? 'selected' : ''} ${errors.role ? 'error' : ''}`}
+                  className={`role-option ${formData.role === 'USER' ? 'selected' : ''} ${errors.role ? 'error' : ''}`}
                   onClick={() => {
-                    setFormData(prev => ({ ...prev, role: 'user' }));
+                    setFormData(prev => ({ ...prev, role: 'USER' }));
                     setErrors(prev => ({ ...prev, role: '' }));
                   }}
                 >
                   User
                 </div>
                 <div
-                  className={`role-option ${formData.role === 'sales' ? 'selected' : ''} ${errors.role ? 'error' : ''}`}
+                  className={`role-option ${formData.role === 'SALES' ? 'selected' : ''} ${errors.role ? 'error' : ''}`}
                   onClick={() => {
-                    setFormData(prev => ({ ...prev, role: 'sales' }));
+                    setFormData(prev => ({ ...prev, role: 'SALES' }));
                     setErrors(prev => ({ ...prev, role: '' }));
                   }}
                 >
@@ -346,25 +300,7 @@ const Login = () => {
           </p>
         </form>
         
-        {!isSignup && (
-          <div className="social-login">
-            <button className="social-btn google">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
-                <path d="M9.003 18c2.43 0 4.467-.806 5.956-2.18L12.05 13.56c-.806.54-1.836.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.96v2.332C2.44 15.983 5.485 18 9.003 18z" fill="#34A853"/>
-                <path d="M3.964 10.712c-.18-.54-.282-1.117-.282-1.71 0-.593.102-1.17.282-1.71V4.96H.957C.347 6.175 0 7.55 0 9.002c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-                <path d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.426 0 9.003 0 5.485 0 2.44 2.017.96 4.958L3.967 7.29c.708-2.127 2.692-3.71 5.036-3.71z" fill="#EA4335"/>
-              </svg>
-              Login with Google
-            </button>
-            <button className="social-btn outlook">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="white">
-                <path d="M9 0L0 3v12l9 3 9-3V3L9 0zm0 2.5L15.5 5 9 7.5 2.5 5 9 2.5zM1.5 6.5L8 9v7.5l-6.5-2.5V6.5zm7 9V9l6.5-2.5V14l-6.5 2.5z"/>
-              </svg>
-              Login with Outlook
-            </button>
-          </div>
-        )}
+        
       </div>
     </div>
    
@@ -373,302 +309,3 @@ const Login = () => {
 };
 
 export default Login;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ai
-import React, { useState, useEffect, useContext } from "react";
-import { useNavigate } from "react-router-dom";
-import "./Login.css";
-import LandingNavbar from "../Landingpage/NavbarLanding";
-import Footer from "../Footer/Footer";
-import { AuthContext } from "../../context/AuthContext"; // import your context
-import { toast, ToastContainer, Bounce } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-
-const Login = () => {
-  const navigate = useNavigate();
-  const { login, signup } = useContext(AuthContext); // context functions
-  const [animate, setAnimate] = useState(false);
-  const [isSignup, setIsSignup] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    role: "user",
-  });
-
-  useEffect(() => {
-    setAnimate(true);
-  }, []);
-
-  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    let newErrors = {};
-
-    if (!validateEmail(formData.email)) newErrors.email = "Invalid email";
-    if (formData.password.length < 6) newErrors.password = "Invalid password";
-
-    if (!isSignup && !formData.role) newErrors.role = "Please select a role";
-    if (isSignup && !formData.firstName.trim())
-      newErrors.firstName = "First name required";
-    if (isSignup && !formData.lastName.trim())
-      newErrors.lastName = "Last name required";
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      let response;
-      if (isSignup) {
-        response = await signup(formData);
-      } else {
-        response = await login(formData.email, formData.password, formData.role);
-      }
-
-      if (response.success) {
-        toast.success(
-          isSignup
-            ? "Signup successful! Redirecting..."
-            : `Login successful as ${response.role}`,
-          { position: "bottom-left", transition: Bounce }
-        );
-
-        setTimeout(() => {
-          if (response.role === "sales") navigate("/dashboard", { replace: true });
-          else navigate("/user-dashboard", { replace: true });
-        }, 1000);
-      } else {
-        toast.error(response.message, { position: "bottom-left", transition: Bounce });
-        setLoading(false);
-      }
-    } catch (err) {
-      toast.error("Something went wrong!", { position: "bottom-left", transition: Bounce });
-      setLoading(false);
-    }
-  };
-
-  const toggleMode = () => {
-    setIsSignup(!isSignup);
-    setFormData({
-      firstName: "",
-      lastName: "",
-      email: "",
-      password: "",
-      role: "user",
-    });
-    setErrors({});
-    setLoading(false);
-  };
-
-  return (
-    <>
-      <LandingNavbar />
-      <div className="login-container" style={{ marginTop: "70px" }}>
-        <ToastContainer />
-        <div className={`login-left ${animate ? "slide-left" : ""}`}>
-          <h1 className="logos">Standard Chartered</h1>
-          <p>
-            <i>Effortless credit card management starts here. Secure, fast, reliable.</i>
-          </p>
-        </div>
-
-        <div className={`login-right ${animate ? "slide-right" : ""}`}>
-          <h2>{isSignup ? "Sign up" : "Welcome Back"}</h2>
-          <p>{isSignup ? "Sign up to continue" : "Sign in to continue"}</p>
-
-          <form
-            onSubmit={handleSubmit}
-            className="login-form"
-            key={isSignup ? "signup" : "login"}
-            noValidate
-          >
-            {isSignup && (
-              <div className="form-row">
-                <div className="input-wrapper">
-                  <input
-                    type="text"
-                    name="firstName"
-                    placeholder="First Name"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    className={errors.firstName ? "error" : ""}
-                    required
-                  />
-                  {errors.firstName && <span className="error-message">{errors.firstName}</span>}
-                </div>
-                <div className="input-wrapper">
-                  <input
-                    type="text"
-                    name="lastName"
-                    placeholder="Last Name"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    className={errors.lastName ? "error" : ""}
-                    required
-                  />
-                  {errors.lastName && <span className="error-message">{errors.lastName}</span>}
-                </div>
-              </div>
-            )}
-
-            <div className="input-wrapper">
-              <input
-                type="email"
-                name="email"
-                placeholder="Email address"
-                value={formData.email}
-                onChange={handleChange}
-                className={errors.email ? "error" : ""}
-                required
-              />
-              {errors.email && <span className="error-message">{errors.email}</span>}
-            </div>
-
-            <div className="input-wrapper">
-              <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-                className={errors.password ? "error" : ""}
-                required
-              />
-              {errors.password && <span className="error-message">{errors.password}</span>}
-            </div>
-
-            {!isSignup && (
-              <div className="input-wrapper">
-                <div className="role-label">Select Role</div>
-                <div className="role-selector">
-                  <div
-                    className={`role-option ${formData.role === "user" ? "selected" : ""} ${
-                      errors.role ? "error" : ""
-                    }`}
-                    onClick={() => setFormData((prev) => ({ ...prev, role: "user" }))}
-                  >
-                    User
-                  </div>
-                  <div
-                    className={`role-option ${formData.role === "sales" ? "selected" : ""} ${
-                      errors.role ? "error" : ""
-                    }`}
-                    onClick={() => setFormData((prev) => ({ ...prev, role: "sales" }))}
-                  >
-                    Sales User
-                  </div>
-                </div>
-                {errors.role && <span className="error-message">{errors.role}</span>}
-              </div>
-            )}
-
-            <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? (
-                <span className="btn-loading">
-                  <span className="spinner"></span>
-                  {isSignup ? "Creating Account..." : "Logging in..."}
-                </span>
-              ) : (
-                isSignup ? "Signup" : "Login"
-              )}
-            </button>
-
-            <p className="signup-link">
-              {isSignup ? "Already have an account? " : "Don't have an account? "}
-              <button type="button" className="toggle-link" onClick={toggleMode}>
-                {isSignup ? "Login" : "Signup"}
-              </button>
-            </p>
-          </form>
-        </div>
-      </div>
-    </>
-  );
-};
-
-export default Login;
-
-
-
-
-// login
- const handleLogin = async (e) => {
-    e.preventDefault();
-
-    const { email, password, role } = formData;
-    let newErrors = {};
-
-    if (!validateEmail(email)) newErrors.email = "Invalid email";
-    if (password.length < 6) newErrors.password = "Invalid password";
-    if (!role) newErrors.role = "Please select a role";
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const response = await login(email, password); // context login function
-
-      if (response.success) {
-        toast.success(`Login successful as ${response.role}`, {
-          position: "bottom-left",
-          transition: Bounce,
-        });
-
-        setTimeout(() => {
-          if (response.role === "sales") navigate("/dashboard", { replace: true });
-          else navigate("/user-dashboard", { replace: true });
-        }, 1000);
-      } else {
-        setLoading(false);
-        setErrors({
-          email: "Invalid email",
-          password: "Invalid password",
-        });
-        toast.error(response.message, { position: "bottom-left", transition: Bounce });
-      }
-    } catch (err) {
-      setLoading(false);
-      toast.error("Login failed!", { position: "bottom-left", transition: Bounce });
-    }
-  };
-
