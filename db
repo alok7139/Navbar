@@ -1,0 +1,12 @@
+delete from users where email='sales@gmail.com';
+
+INSERT INTO users (user_id, first_name, last_name, email, password, role, created_at)
+VALUES (
+    gen_random_uuid(),
+    'Ayyappa',
+    'Chowdary',
+    'sales@gmail.com',
+    '$2a$10$.HA6b.usMIz8J9CgGaO.3uXz1TIAgYOFn95zVCOVW9k/4njtofnyK',
+    'SALES',
+    CURRENT_TIMESTAMP
+);
