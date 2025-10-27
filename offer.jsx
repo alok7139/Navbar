@@ -1,3 +1,209 @@
+import React, { useEffect, useRef, useState, useMemo } from "react";
+import axios from "axios";
+import { Modal } from "bootstrap";
+
+const API_BASE = "http://localhost:8080";
+
+export default function OfferConfirmation() {
+  const [data, setData] = useState([]); // ✅ API data
+  const [who, setWho] = useState(null);
+  const [disabledIds, setDisabledIds] = useState(new Set());
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState("All");
+  const [sortDir, setSortDir] = useState("oldest");
+  const [loading, setLoading] = useState(true);
+
+  const modalRef = useRef(null);
+  const bsModal = useRef(null);
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    if (modalRef.current && !bsModal.current) {
+      bsModal.current = new Modal(modalRef.current, {
+        backdrop: "static",
+        keyboard: true,
+      });
+    }
+  }, []);
+
+  // ✅ Fetch Approved Applications from backend
+  const fetchApprovedData = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`${API_BASE}/api/offer/approved`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setData(res.data || []);
+    } catch (err) {
+      console.error("Fetch Error:", err);
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchApprovedData();
+  }, []);
+
+  const toTime = (d) => new Date(d).getTime();
+
+  const filteredAndSorted = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    let rows = data.filter((r) => {
+      const s = r.fullName?.toLowerCase() || "";
+      const matchesSearch = q === "" || s.includes(q);
+      const matchesStatus = status === "All" || r.documentVerificationStatus === status;
+      return matchesSearch && matchesStatus;
+    });
+
+    rows = rows.sort((a, b) => {
+      const ta = toTime(a.submittedAt);
+      const tb = toTime(b.submittedAt);
+      return sortDir === "oldest" ? ta - tb : tb - ta;
+    });
+
+    return rows;
+  }, [data, query, status, sortDir]);
+
+  // ✅ Fetch Credit Score on Approve Click
+  const handleActionClick = async (row) => {
+    if (disabledIds.has(row.appId)) return;
+    setDisabledIds((prev) => new Set(prev).add(row.appId));
+
+    try {
+      const res = await axios.get(
+        `${API_BASE}/api/offer/credit-score/${row.appId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setWho({ ...row, ...res.data });
+      bsModal.current?.show();
+
+    } catch (err) {
+      console.error("Credit Score Fetch Error:", err);
+      alert("Unable to generate credit score!");
+    }
+  };
+
+  return (
+    <div className="container py-4">
+      <h1 className="mb-3" style={{ backgroundImage: "linear-gradient(to bottom, #007b8f, #00434e)", WebkitBackgroundClip: "text", color: "transparent" }}>Offer Confirmation</h1>
+
+      {/* 🔍 Search + Filters */}
+      <div className="mb-3 d-flex gap-2 flex-wrap">
+        <input className="form-control" style={{ maxWidth: 260 }} placeholder="search by name"
+          value={query} onChange={(e) => setQuery(e.target.value)} />
+        <select className="form-select" style={{ maxWidth: 180 }}
+          value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option>All</option>
+          <option value="APPROVED">Approved</option>
+          <option value="REJECTED">Rejected</option>
+        </select>
+        <select className="form-select" style={{ maxWidth: 200 }}
+          value={sortDir} onChange={(e) => setSortDir(e.target.value)}>
+          <option value="oldest">Date (Oldest First)</option>
+          <option value="newest">Date (Newest First)</option>
+        </select>
+      </div>
+
+      {loading ? (
+        <p className="text-center">Loading...</p>
+      ) : (
+        <div className="table-responsive">
+          <table className="table align-middle table-hover">
+            <thead>
+              <tr>
+                <th>APPLICANT NO</th>
+                <th>APPLICANT NAME</th>
+                <th>APPLICATION DATE</th>
+                <th>DOCUMENT STATUS</th>
+                <th>CREDIT SCORE</th>
+                <th style={{ minWidth: 110 }}>ACTION</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {filteredAndSorted.map((r) => {
+                const isDisabled = disabledIds.has(r.appId);
+                return (
+                  <tr key={r.appId}>
+                    <td>{r.appId}</td>
+                    <td>{r.fullName}</td>
+                    <td>{r.submittedAt?.split("T")[0]}</td>
+                    <td><span className="badge bg-success">{r.documentVerificationStatus}</span></td>
+                    <td>{r.creditScore || "-"}</td>
+
+                    <td>
+                      <button className="btn btn-sm btn-success"
+                        onClick={() => handleActionClick(r)}
+                        disabled={isDisabled}>
+                        Approve
+                      </button>
+                      <button className="btn btn-sm btn-danger ms-1"
+                        disabled>
+                        Reject
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {filteredAndSorted.length === 0 && (
+                <tr><td colSpan="6" className="text-center text-muted py-3">No results</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* ✅ Modal */}
+      <div className="modal fade" tabIndex="-1" ref={modalRef}>
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content text-center">
+            <div className="modal-header">
+              <h5 className="modal-title">Credit Score Generated ✅</h5>
+              <button className="btn-close" onClick={() => bsModal.current?.hide()}></button>
+            </div>
+            <div className="modal-body">
+              <h5>{who?.fullName}</h5>
+              <p className="fw-bold fs-4">{who?.creditScore}</p>
+              <p className="text-muted">{who?.creditRating}</p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-primary" onClick={() => bsModal.current?.hide()}>
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p className="mt-3 small text-muted">
+        When credit score is generated, notification is sent automatically.
+      </p>
+    </div>
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Modal } from 'bootstrap';
 
