@@ -1,0 +1,215 @@
+import { FileText, User, Phone, Calendar, CheckCircle, XCircle, Filter, X, Search, Eye, ArrowLeft, Download } from 'lucide-react';
+import React from 'react';
+// import DocumentVerificationApp from './DocumentverificationApp';
+import "./VerificationDetails.css";
+import axios from 'axios';
+
+const API_BASE = "http://localhost:8080";
+const VerificationDetails = ({
+  application,
+  onBack,
+  onApprove,
+  onReject,
+  showRejectModal,
+  setShowRejectModal,
+  rejectionReason,
+  setRejectionReason,
+  rejectionError,
+  setRejectionError,
+  handleRejectSubmit
+}) => {
+
+
+ const handlePreview = async ({
+  appId,
+  docType
+}) => {
+
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Please login first");
+      return;
+    }
+
+    
+   
+
+    const response = await axios.get(
+      `${API_BASE}/api/application/${appId}/download/${docType}`,
+      {
+        responseType: "blob",
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+
+    const file = new Blob([response.data], { type: "application/pdf" });
+    const url = window.URL.createObjectURL(file);
+
+    const previewWindow = window.open(url, "_blank");
+
+    if (previewWindow) {
+      const int = setInterval(() => {
+        if (previewWindow.closed) {
+          clearInterval(int);
+          window.URL.revokeObjectURL(url);
+        }
+      }, 1000);
+    } else {
+      alert("Please allow popups to view PDF");
+    }
+
+  } catch (err) {
+    console.error(err);
+    // alert("Failed to preview document!");
+  } 
+};
+ 
+   
+  return (
+    <>
+      <div className="verification-details-container">
+        <div className="details-header">
+          <button className="back-btn" onClick={onBack}>
+            <ArrowLeft size={20} />
+            Back 
+          </button>
+          <h1 className="details-title">Application Details</h1>
+        </div>
+ 
+        <div className="details-content">
+     
+          <div className="details-card">
+            <div className="card-header">
+              {/* <h2 className="card-title">Application Information</h2> */}
+              <span className="app-id-badge">{application.id}</span>
+            </div>
+            <div className="info-grid">
+              <div className="info-item">
+                <span className="info-label">Full Name</span>
+                <span className="info-value">{application.userName}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Email</span>
+                <span className="info-value">{application.email}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Phone</span>
+                <span className="info-value">{application.phone}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Card Type</span>
+                <span className="info-value card-type">{application.cardType.replace('_', ' ')}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Submitted Date</span>
+                <span className="info-value">{application.submittedDate}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Status</span>
+                <span className="info-value">{application.status}</span>
+              </div>
+            </div>
+          </div>
+ 
+          <div className="details-card">
+            <div className="card-header">
+              <h2 className="card-title">Uploaded Documents</h2>
+            </div>
+            <div className="documents-grid">
+             
+                <div key={application.id} className="document-item">
+                  <div className="document-icon">
+                    <FileText size={28} />
+                  </div>
+                  <div className="document-info">
+                    <p className="document-label">{"aadhar"}</p>
+                    {/* {console.log(application.id)} */}
+                    {/* <p className="document-name">{application.aadhar}</p> */}
+                  </div>
+                  <button className="view-document-btn" onClick={() => handlePreview(application.id , application.aadharFilename )}>
+                    <Eye size={20} />
+                  </button>
+                </div>
+                <div key={application.id} className="document-item">
+                  <div className="document-icon">
+                    <FileText size={28} />
+                  </div>
+                  <div className="document-info">
+                    <p className="document-label">{"Pan"}</p>
+                    {/* <p className="document-name">{application.pan}</p> */}
+                  </div>
+                  <button className="view-document-btn" onClick={() =>handlePreview({appId:application.id , docType:application.panFilename})}>
+                    <Eye size={20} />
+                  </button>
+                </div>
+                <div key={application.id} className="document-item">
+                  <div className="document-icon">
+                    <FileText size={28} />
+                  </div>
+                  <div className="document-info">
+                    <p className="document-label">{"Income"}</p>
+                    {/* <p className="document-name">{application.income}</p> */}
+                  </div>
+                  <button className="view-document-btn" onClick={() =>handlePreview(application.id , application.incomeProofFilename)}>
+                    <Eye size={20} />
+                  </button>
+                </div>
+              
+            </div>
+          </div>
+ 
+          {application.status === 'in_progress' && (
+            <div className="action-buttons">
+              <button className="reject-btn" onClick={onReject}>
+                <XCircle size={20} />
+                Reject Application
+              </button>
+              <button className="approve-btn" onClick={onApprove}>
+                <CheckCircle size={20} />
+                Approve Application
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+ 
+      {showRejectModal && (
+        <div className="modal-overlay" onClick={() => setShowRejectModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">Reject Application</h3>
+              <button className="modal-close" onClick={() => setShowRejectModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <label className="modal-label">Rejection Reason *</label>
+              <textarea
+                className={`modal-textarea ${rejectionError ? 'error' : ''}`}
+                rows="5"
+                placeholder="Enter the reason for rejection..."
+                value={rejectionReason}
+                onChange={(e) => {
+                  setRejectionReason(e.target.value);
+                  setRejectionError('');
+                }}
+              />
+              {rejectionError && <span className="error-text">{rejectionError}</span>}
+            </div>
+            <div className="modal-footer">
+              <button className="modal-cancel-btn" onClick={() => setShowRejectModal(false)}>
+                Cancel
+              </button>
+              <button className="modal-reject-btn" onClick={handleRejectSubmit}>
+                Reject Application
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+ 
+export default VerificationDetails;
