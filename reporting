@@ -1,146 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
-import axios from "axios";
-import "./ReportingPage.css";
-
-const API_BASE = "http://localhost:8080"; 
-const token = localStorage.getItem("token"); 
-
-const Dashboard = () => {
-  const [currentPage, setCurrentPage] = useState("dashboard");
-  const [dateRange, setDateRange] = useState("all");
-  const [cardTypeFilter, setCardTypeFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [applications, setApplications] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  // ✅ Fetch approved & offer-confirmed data from backend
-  const fetchApprovedData = async () => {
-    try {
-      setLoading(true);
-      const res = await axios.get(`${API_BASE}/api/offer/approved`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      console.log("Fetched:", res.data);
-      setApplications(res.data || []);
-    } catch (err) {
-      console.error("Fetch Error:", err);
-      setApplications([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchApprovedData();
-  }, []);
-
-  // ✅ Filtering Logic
-  const filteredApplications = useMemo(() => {
-    return applications.filter((app) => {
-      const matchesCardType =
-        cardTypeFilter === "all" || app.cardType === cardTypeFilter;
-
-      const matchesStatus =
-        statusFilter === "all" || app.status === statusFilter;
-
-      let matchesDate = true;
-      if (dateRange !== "all" && app.offerDate) {
-        const appDate = new Date(app.offerDate);
-        const today = new Date();
-
-        if (dateRange === "last7days") {
-          const last7 = new Date(today);
-          last7.setDate(today.getDate() - 7);
-          matchesDate = appDate >= last7;
-        } else if (dateRange === "last30days") {
-          const last30 = new Date(today);
-          last30.setDate(today.getDate() - 30);
-          matchesDate = appDate >= last30;
-        } else if (dateRange === "thisMonth") {
-          matchesDate = appDate.getMonth() === today.getMonth();
-        }
-      }
-
-      return matchesCardType && matchesStatus && matchesDate;
-    });
-  }, [applications, dateRange, cardTypeFilter, statusFilter]);
-
-  // ✅ Stats Calculation
-  const stats = useMemo(() => {
-    return {
-      total: filteredApplications.length,
-      approved: filteredApplications.filter((a) => a.status === "Approved")
-        .length,
-      pending: filteredApplications.filter((a) => a.status === "Pending")
-        .length,
-      rejected: filteredApplications.filter((a) => a.status === "Rejected")
-        .length,
-    };
-  }, [filteredApplications]);
-
-  // ✅ Report Data
-  const reportData = useMemo(() => {
-    const cardTypes = ["Platinum", "Gold", "Silver", "Bronze"];
-    return cardTypes.map((type) => {
-      const apps = filteredApplications.filter((app) => app.cardType === type);
-      const approvedCount = apps.filter((app) => app.status === "Approved")
-        .length;
-      const total = apps.length;
-      const perc = total > 0 ? ((approvedCount / total) * 100).toFixed(1) : 0;
-
-      return {
-        cardType: type,
-        total,
-        approved: approvedCount,
-        percentage: perc,
-      };
-    });
-  }, [filteredApplications]);
-
-  const resetFilters = () => {
-    setDateRange("all");
-    setCardTypeFilter("all");
-    setStatusFilter("all");
-  };
-
-  if (loading) return <h2 className="text-center my-5">Loading...</h2>;
-
-  return currentPage === "status" ? (
-    <StatusPage
-      applications={filteredApplications}
-      onBack={() => setCurrentPage("dashboard")}
-    />
-  ) : currentPage === "report" ? (
-    <ReportPage
-      reportData={reportData}
-      stats={stats}
-      onBack={() => setCurrentPage("dashboard")}
-    />
-  ) : (
-    <>
-      {/* ✅ Original UI remains unchanged */}
-      {/* Your full JSX for Dashboard main UI — unchanged */}
-    </>
-  );
-};
-
-export default Dashboard;
-
-
-
-
-
-
-
-
-
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import './ReportingPage.css'
 import initialApplications from './data'
+import axios from 'axios';
 
 // Sample data
-
+const API_BASE = "http://localhost:8080";
 
 
 const Dashboard = () => {
@@ -149,8 +13,28 @@ const Dashboard = () => {
   const [cardTypeFilter, setCardTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
+  const [applications, setApplications] = useState([]);
+
+  const fetchAllApplications = async () => {
+        try {
+            const token = localStorage.getItem("token"); 
+            const response = await axios.get(`${API_BASE}/api/onboarding/all`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            console.log("API data:", response.data);
+            setApplications(response.data || []);
+        } catch (error) {
+            console.error("Error fetching applications:", error.response?.data || error.message);
+        }
+    };
+
+    useEffect(() => {
+        fetchAllApplications();
+    }, []);
+
   const filteredApplications = useMemo(() => {
-    return initialApplications.filter(app => {
+    return applications.filter(app => {
       const matchesCardType = cardTypeFilter === 'all' || app.cardType === cardTypeFilter;
       const matchesStatus = statusFilter === 'all' || app.status === statusFilter;
       
@@ -178,18 +62,18 @@ const Dashboard = () => {
 
   const stats = useMemo(() => {
     const total = filteredApplications.length;
-    const approved = filteredApplications.filter(app => app.status === 'Approved').length;
-    const pending = filteredApplications.filter(app => app.status === 'Pending').length;
-    const rejected = filteredApplications.filter(app => app.status === 'Rejected').length;
+    const approved = filteredApplications.filter(app => app.status === 'APPROVED').length;
+    const pending = filteredApplications.filter(app => app.status === 'PENDING').length;
+    const rejected = filteredApplications.filter(app => app.status === 'REJECTED').length;
     
     return { total, approved, pending, rejected };
   }, [filteredApplications]);
 
   const reportData = useMemo(() => {
-    const cardTypes = ['Platinum', 'Gold', 'Silver', 'Bronze'];
+    const cardTypes = ['PLATINUM', 'GOLD', 'SILVER'];
     return cardTypes.map(type => {
       const typeApps = filteredApplications.filter(app => app.cardType === type);
-      const approved = typeApps.filter(app => app.status === 'Approved').length;
+      const approved = typeApps.filter(app => app.status === 'APPROVED').length;
       const total = typeApps.length;
       const percentage = total > 0 ? ((approved / total) * 100).toFixed(1) : 0;
       
@@ -243,10 +127,10 @@ const Dashboard = () => {
                     style={{ background: 'linear-gradient(to bottom, #007b8f)',color:"white", border: '1px solid #000' }}
                   >
                     <option value="" style={{color:"black"}}>Card Type ▼</option>
-                    <option value="Platinum" style={{color:"black"}}>Platinum</option>
-                    <option value="Gold" style={{color:"black"}}>Gold</option>
-                    <option value="Silver" style={{color:"black"}}>Silver</option>
-                    <option value="Bronze" style={{color:"black"}}>Bronze</option>
+                    <option value="PLATINUM" style={{color:"black"}}>Platinum</option>
+                    <option value="GOLD" style={{color:"black"}}>Gold</option>
+                    <option value="SILVER" style={{color:"black"}}>Silver</option>
+                    
                   </select>
                 </div>
                 
@@ -328,11 +212,11 @@ const Dashboard = () => {
                       <tbody>
                         {filteredApplications.slice(0, 5).map((app) => (
                           <tr key={app.id}>
-                            <td>{app.id}</td>
-                            <td>{app.name}</td>
+                            <td>{app.appId.substring(0,8)}</td>
+                            <td>{app.fullName}</td>
                             <td>{app.cardType}</td>
                             <td>{app.status}</td>
-                            <td>{new Date(app.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td>
+                            <td>{new Date(app.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -364,9 +248,9 @@ const StatusPage = ({ applications, onBack }) => {
     : applications.filter(app => app.status === statusFilter);
 
   const statusCounts = {
-    approved: applications.filter(app => app.status === 'Approved').length,
-    pending: applications.filter(app => app.status === 'Pending').length,
-    rejected: applications.filter(app => app.status === 'Rejected').length,
+    approved: applications.filter(app => app.status === 'APPROVED').length,
+    pending: applications.filter(app => app.status === 'IN_PROGRESS').length,
+    rejected: applications.filter(app => app.status === 'REJECTED').length,
   };
 
   return (
@@ -419,20 +303,20 @@ const StatusPage = ({ applications, onBack }) => {
                   All
                 </button>
                 <button 
-                  className={`btn ${statusFilter === 'Approved' ? 'btn-success' : 'btn-outline-success'}`}
-                  onClick={() => setStatusFilter('Approved')}
+                  className={`btn ${statusFilter === 'APPROVED' ? 'btn-success' : 'btn-outline-success'}`}
+                  onClick={() => setStatusFilter('APPROVED')}
                 >
                   Approved
                 </button>
                 <button 
-                  className={`btn ${statusFilter === 'Pending' ? 'btn-warning' : 'btn-outline-warning'}`}
-                  onClick={() => setStatusFilter('Pending')}
+                  className={`btn ${statusFilter === 'IN_PROGRESS' ? 'btn-warning' : 'btn-outline-warning'}`}
+                  onClick={() => setStatusFilter('PENDING')}
                 >
                   Pending
                 </button>
                 <button 
-                  className={`btn ${statusFilter === 'Rejected' ? 'btn-danger' : 'btn-outline-danger'}`}
-                  onClick={() => setStatusFilter('Rejected')}
+                  className={`btn ${statusFilter === 'REJECTED' ? 'btn-danger' : 'btn-outline-danger'}`}
+                  onClick={() => setStatusFilter('REJECTED')}
                 >
                   Rejected
                 </button>
@@ -452,21 +336,21 @@ const StatusPage = ({ applications, onBack }) => {
                   <tbody>
                     {filteredByStatus.map((app) => (
                       <tr key={app.id}>
-                        <td>{app.id}</td>
-                        <td>{app.name}</td>
+                        <td>{app.appId.substring(0,8)}</td>
+                        <td>{app.fullName}</td>
                         <td>
                           <span className="badge bg-secondary">{app.cardType}</span>
                         </td>
                         <td>
                           <span className={`badge ${
-                            app.status === 'Approved' ? 'bg-success' : 
-                            app.status === 'Pending' ? 'bg-warning text-dark' : 
+                            app.status === 'APPROVED' ? 'bg-success' : 
+                            app.status === 'IN_PROGRESS' ? 'bg-warning text-dark' : 
                             'bg-danger'
                           }`}>
                             {app.status}
                           </span>
                         </td>
-                        <td>{new Date(app.date).toLocaleDateString('en-US', { 
+                        <td>{new Date(app.submittedAt).toLocaleDateString('en-US', { 
                           year: 'numeric', 
                           month: 'long', 
                           day: 'numeric' 
@@ -587,7 +471,7 @@ const ReportPage = ({ reportData, stats, onBack }) => {
 
               <div className="row">
                 {reportData.map((data) => (
-                  <div key={data.cardType} className="col-12 col-md-6 col-lg-3 mb-3">
+                  <div key={data.cardType} className="col-12 col-md-6 col-lg-4 mb-3">
                     <div className="card h-100" style={{ 
                       backgroundColor: '', 
                       border: '2px solid #000',
