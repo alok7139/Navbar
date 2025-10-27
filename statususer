@@ -1,3 +1,263 @@
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import "./UserStatus.css";
+import { toast } from "react-toastify";
+import axios from "axios";
+
+const API_BASE = "http://localhost:8080";
+
+const UserStatus = () => {
+  const navigate = useNavigate();
+  const [applicationData, setApplicationData] = useState(null);
+  const [currentStage, setCurrentStage] = useState(1);
+  const [rejectionInfo, setRejectionInfo] = useState(null);
+  const [canEdit, setCanEdit] = useState(false);
+
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    if (!token) {
+      toast.error("Please login to view your applications");
+      return;
+    }
+
+    const fetchApplication = async () => {
+      try {
+        const res = await axios.get(
+          `${API_BASE}/api/application/my-applications`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        // Backend can return array or single object
+        const data = Array.isArray(res.data) ? res.data[0] : res.data;
+
+        if (!data) {
+          setApplicationData(null);
+          return;
+        }
+
+        setApplicationData(data);
+      } catch (error) {
+        toast.error("Unable to fetch application");
+      }
+    };
+
+    fetchApplication();
+  }, [token]);
+
+  useEffect(() => {
+    if (!applicationData) return;
+
+    const status = applicationData.documentVerificationStatus;
+
+    if (status === "REJECTED") {
+      setCurrentStage(2);
+      setCanEdit(true);
+      setRejectionInfo({
+        stage: 2,
+        reason:
+          applicationData.offerRejectReason ||
+          "Document verification failed by bank",
+      });
+    } else if (status === "IN_PROGRESS") {
+      setCurrentStage(2);
+      setCanEdit(true);
+      setRejectionInfo(null);
+    } else if (status === "APPROVED") {
+      setCurrentStage(3);
+      setCanEdit(false);
+      setRejectionInfo(null);
+    } else {
+      setCurrentStage(1);
+    }
+  }, [applicationData]);
+
+  const stages = [
+    {
+      id: 1,
+      title: "Application Submitted",
+      description: "Your application has been received successfully",
+    },
+    {
+      id: 2,
+      title: "Document Verification",
+      description: "Your documents are being verified by the bank",
+    },
+    {
+      id: 3,
+      title: "Offer Confirmation",
+      description: "Your credit card has been approved",
+    },
+  ];
+
+  const handleEditApplication = () => {
+    if (canEdit) {
+      navigate("/apply", { state: { editApplication: applicationData } });
+    }
+  };
+
+  const handleNewApplication = () => {
+    navigate("/application");
+  };
+
+  if (!applicationData) {
+    return (
+      <div className="status-container">
+        <div className="empty-state">
+          <h2>No Application Found</h2>
+          <button className="apply-now-btn" onClick={() => navigate("/apply")}>
+            Apply Now
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="status-container">
+      <div className="status-header">
+        <h1
+          className="status-title"
+          style={{
+            backgroundImage: "linear-gradient(to bottom, #007b8f, #00434e)",
+            WebkitBackgroundClip: "text",
+            color: "transparent",
+          }}
+        >
+          Application Status
+        </h1>
+        <p className="status-subtitle">Track your credit card application</p>
+      </div>
+
+      <div className="status-card">
+        <div className="progress-timeline">
+          {stages.map((stage, index) => {
+            const isCompleted = currentStage > stage.id;
+            const isCurrent = currentStage === stage.id;
+            const isRejected =
+              rejectionInfo && rejectionInfo.stage === stage.id;
+
+            return (
+              <React.Fragment key={stage.id}>
+                <div className="progress-step">
+                  <div
+                    className={`progress-circle ${
+                      isRejected
+                        ? "REJECTED"
+                        : isCompleted
+                        ? "completed"
+                        : isCurrent
+                        ? "current"
+                        : "pending"
+                    }`}
+                  >
+                    {isRejected ? "X" : isCompleted ? "✓" : stage.id}
+                  </div>
+
+                  <div className="progress-label">
+                    <h4
+                      className={`progress-title ${
+                        isRejected
+                          ? "rejected-text"
+                          : isCompleted || isCurrent
+                          ? "active"
+                          : ""
+                      }`}
+                    >
+                      {stage.title}
+                    </h4>
+                    <p
+                      className={`progress-desc ${
+                        isRejected
+                          ? "rejected-text"
+                          : isCompleted || isCurrent
+                          ? "active"
+                          : ""
+                      }`}
+                    >
+                      {isRejected
+                        ? "Verification Failed"
+                        : stage.description}
+                    </p>
+                  </div>
+                </div>
+
+                {index < stages.length - 1 && (
+                  <div
+                    className={`progress-line ${
+                      isRejected
+                        ? "REJECTED"
+                        : currentStage > stage.id
+                        ? "completed"
+                        : "pending"
+                    }`}
+                  ></div>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        {rejectionInfo && (
+          <div className="rejection-alert">
+            <h3>Application Rejected</h3>
+            <p>
+              Reason: <strong>{rejectionInfo.reason}</strong>
+            </p>
+            <button className="edit-application-btn" onClick={handleEditApplication}>
+              Edit & Resubmit
+            </button>
+          </div>
+        )}
+
+        <div className="applicant-info">
+          <h3 className="info-section-title">Application Details</h3>
+
+          <div className="info-grid">
+            <div>
+              <strong>Applicant Name:</strong> {applicationData.fullName}
+            </div>
+            <div>
+              <strong>Application ID:</strong> {applicationData.appId}
+            </div>
+            <div>
+              <strong>Email:</strong> {applicationData.email}
+            </div>
+            <div>
+              <strong>Phone:</strong> {applicationData.phoneNumber}
+            </div>
+            <div>
+              <strong>Card Type:</strong> {applicationData.cardType}
+            </div>
+          </div>
+        </div>
+
+        {currentStage === 3 && !rejectionInfo && (
+          <div className="success-banner">
+            <h3>Congratulations. Your application is approved</h3>
+            <button className="new-application-button" onClick={handleNewApplication}>
+              Apply for another card
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default UserStatus;
+
+
+
+
+
+
+
+
+
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './UserStatus.css';
