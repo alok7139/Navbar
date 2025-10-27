@@ -1,3 +1,288 @@
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { useNavigate, useParams } from "react-router-dom";
+
+const API_BASE = "http://localhost:8080"; // ✅ Update if needed
+
+function EditApplication() {
+    const navigate = useNavigate();
+    const { id } = useParams();
+
+    const [formData, setFormData] = useState({
+        fullName: "",
+        dateOfBirth: "",
+        phoneNumber: "",
+        email: "",
+        address: "",
+        cardType: "",
+        aadharPdf: null,
+        panPdf: null,
+        incomeProofPdf: null,
+    });
+
+    const [serverFiles, setServerFiles] = useState({});
+    const [errors, setErrors] = useState({});
+    const token = localStorage.getItem("token");
+
+    useEffect(() => {
+        loadApplicationData();
+    }, [id]);
+
+    const loadApplicationData = async () => {
+        try {
+            const response = await axios.get(`${API_BASE}/api/application/${id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            const data = response.data;
+            setFormData({
+                fullName: data.fullName || "",
+                dateOfBirth: data.dateOfBirth || "",
+                phoneNumber: data.phoneNumber || "",
+                email: data.email || "",
+                address: data.address || "",
+                cardType: data.cardType || "",
+                aadharPdf: null,
+                panPdf: null,
+                incomeProofPdf: null,
+            });
+
+            setServerFiles({
+                aadhar: data.aadharFilename,
+                pan: data.panFilename,
+                income: data.incomeProofFilename,
+            });
+
+        } catch (err) {
+            alert("❌ Error loading application");
+            console.error(err);
+        }
+    };
+
+    const handleInputChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleFileChange = (e, field) => {
+        const file = e.target.files[0];
+        setFormData({ ...formData, [field]: file });
+    };
+
+    const validateForm = () => {
+        const newErrors = {};
+        if (!formData.fullName.trim()) newErrors.fullName = "Full Name Required";
+        if (!/^[0-9]{10}$/.test(formData.phoneNumber)) newErrors.phoneNumber = "Valid Phone Required";
+        if (!formData.email) newErrors.email = "Email Required";
+        if (!formData.dateOfBirth) newErrors.dateOfBirth = "DOB Required";
+        if (!formData.address) newErrors.address = "Address Required";
+        if (!formData.cardType) newErrors.cardType = "Card Type Required";
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!validateForm()) return;
+
+        const payload = new FormData();
+        Object.entries(formData).forEach(([key, value]) => {
+            if (value !== null && value !== "") payload.append(key, value);
+        });
+
+        try {
+            await axios.put(`${API_BASE}/api/application/update/${id}`, payload, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+
+            alert("✅ Application Updated Successfully!");
+
+            setFormData({
+                fullName: "",
+                dateOfBirth: "",
+                phoneNumber: "",
+                email: "",
+                address: "",
+                cardType: "",
+                aadharPdf: null,
+                panPdf: null,
+                incomeProofPdf: null,
+            });
+
+            navigate("/onboarding");
+
+        } catch (error) {
+            alert("❌ Update Failed");
+            console.error(error);
+        }
+    };
+
+    const downloadDocument = (type, filename) => {
+        window.open(`${API_BASE}/api/application/${id}/download/${type}/${filename}`, "_blank");
+    };
+
+    return (
+        <div className="container mt-5 pt-5 pb-5">
+            <h2 className="text-center fw-bold mb-3" style={{ color: "#007b8f" }}>
+                Edit Application
+            </h2>
+
+            <form onSubmit={handleSubmit} className="card p-4 shadow-sm">
+
+                {/* Full Name */}
+                <div className="mb-3">
+                    <label>Full Name *</label>
+                    <input
+                        type="text"
+                        name="fullName"
+                        value={formData.fullName}
+                        onChange={handleInputChange}
+                        className="form-control"
+                    />
+                    {errors.fullName && <small className="text-danger">{errors.fullName}</small>}
+                </div>
+
+                {/* Phone */}
+                <div className="mb-3">
+                    <label>Phone Number *</label>
+                    <input
+                        type="text"
+                        name="phoneNumber"
+                        value={formData.phoneNumber}
+                        onChange={handleInputChange}
+                        className="form-control"
+                    />
+                    {errors.phoneNumber && <small className="text-danger">{errors.phoneNumber}</small>}
+                </div>
+
+                {/* Email */}
+                <div className="mb-3">
+                    <label>Email *</label>
+                    <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className="form-control"
+                    />
+                    {errors.email && <small className="text-danger">{errors.email}</small>}
+                </div>
+
+                {/* DOB */}
+                <div className="mb-3">
+                    <label>Date of Birth *</label>
+                    <input
+                        type="date"
+                        name="dateOfBirth"
+                        value={formData.dateOfBirth}
+                        onChange={handleInputChange}
+                        className="form-control"
+                    />
+                    {errors.dateOfBirth && <small className="text-danger">{errors.dateOfBirth}</small>}
+                </div>
+
+                {/* Address */}
+                <div className="mb-3">
+                    <label>Address *</label>
+                    <textarea
+                        name="address"
+                        value={formData.address}
+                        onChange={handleInputChange}
+                        className="form-control"
+                    />
+                    {errors.address && <small className="text-danger">{errors.address}</small>}
+                </div>
+
+                {/* Card Type */}
+                <div className="mb-3">
+                    <label>Card Type *</label>
+                    <select
+                        name="cardType"
+                        value={formData.cardType}
+                        onChange={handleInputChange}
+                        className="form-select"
+                    >
+                        <option value="">Select Card</option>
+                        <option value="GOLD">Gold</option>
+                        <option value="SILVER">Silver</option>
+                        <option value="PLATINUM">Platinum</option>
+                    </select>
+                    {errors.cardType && <small className="text-danger">{errors.cardType}</small>}
+                </div>
+
+                {/* Existing Uploaded Files Preview + Reupload */}
+                <div className="mb-3">
+                    <label>Aadhar</label>
+                    <input
+                        type="file"
+                        className="form-control"
+                        onChange={(e) => handleFileChange(e, "aadharPdf")}
+                    />
+                    {serverFiles.aadhar && (
+                        <button
+                            type="button"
+                            className="btn btn-link p-0 mt-1"
+                            onClick={() => downloadDocument("aadhar", serverFiles.aadhar)}
+                        >
+                            📥 Download Existing
+                        </button>
+                    )}
+                </div>
+
+                <div className="mb-3">
+                    <label>PAN</label>
+                    <input
+                        type="file"
+                        className="form-control"
+                        onChange={(e) => handleFileChange(e, "panPdf")}
+                    />
+                    {serverFiles.pan && (
+                        <button
+                            type="button"
+                            className="btn btn-link p-0 mt-1"
+                            onClick={() => downloadDocument("pan", serverFiles.pan)}
+                        >
+                            📥 Download Existing
+                        </button>
+                    )}
+                </div>
+
+                <div className="mb-3">
+                    <label>Income Proof</label>
+                    <input
+                        type="file"
+                        className="form-control"
+                        onChange={(e) => handleFileChange(e, "incomeProofPdf")}
+                    />
+                    {serverFiles.income && (
+                        <button
+                            type="button"
+                            className="btn btn-link p-0 mt-1"
+                            onClick={() => downloadDocument("income-proof", serverFiles.income)}
+                        >
+                            📥 Download Existing
+                        </button>
+                    )}
+                </div>
+
+                <button className="btn btn-success w-100 mt-3" type="submit">
+                    ✅ Update Application
+                </button>
+            </form>
+        </div>
+    );
+}
+
+export default EditApplication;
+
+
+
+
+
+
 import {React, useEffect, useState} from "react"
 import './EditApplication.css';
 import {useNavigate,useLocation, useParams , Link} from 'react-router-dom';
