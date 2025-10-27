@@ -1,3 +1,11 @@
+import React, { useState, useMemo } from 'react';
+import './ReportingPage.css'
+import initialApplications from './data'
+
+// Sample data
+
+
+
 const Dashboard = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [dateRange, setDateRange] = useState('all');
@@ -210,3 +218,291 @@ const Dashboard = () => {
     </>
   );
 };
+
+const StatusPage = ({ applications, onBack }) => {
+  const [statusFilter, setStatusFilter] = useState('all');
+
+  const filteredByStatus = statusFilter === 'all' 
+    ? applications 
+    : applications.filter(app => app.status === statusFilter);
+
+  const statusCounts = {
+    approved: applications.filter(app => app.status === 'Approved').length,
+    pending: applications.filter(app => app.status === 'Pending').length,
+    rejected: applications.filter(app => app.status === 'Rejected').length,
+  };
+
+  return (
+    <>
+     
+      <div className="min-vh-100" style={{ backgroundColor: '', padding: '20px' }}>
+        <div className="container-fluid">
+          <div className="card shadow-sm" style={{ border: '' }}>
+            <div className="card-body" style={{ backgroundColor: '' }}>
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                <button className="btn btn-secondary" onClick={onBack}>
+                  ← Back 
+                </button>
+                <h1 className="fw-bold mb-0" style={{color:"#007b8f"}}>Application Status</h1>
+                <div style={{ width: '100px' }}></div>
+              </div>
+
+              <div className="row mb-4">
+                <div className="col-12 col-md-4 mb-3">
+                  <div className="card text-center" style={{ backgroundColor: 'lightgreen', border: '1px solid #000' }}>
+                    <div className="card-body">
+                      <h5>Approved</h5>
+                      <h2 className="fw-bold">{statusCounts.approved}</h2>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-12 col-md-4 mb-3">
+                  <div className="card text-center" style={{ backgroundColor: '#ffeb9c', border: '1px solid #000' }}>
+                    <div className="card-body">
+                      <h5>Pending</h5>
+                      <h2 className="fw-bold">{statusCounts.pending}</h2>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-12 col-md-4">
+                  <div className="card text-center" style={{ backgroundColor: '#da5e5eff', border: '1px solid #000' }}>
+                    <div className="card-body">
+                      <h5>Rejected</h5>
+                      <h2 className="fw-bold">{statusCounts.rejected}</h2>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="btn-group w-100 mb-4">
+                <button 
+                  className={`btn ${statusFilter === 'all' ? 'btn-primary' : 'btn-outline-primary'}`}
+                  onClick={() => setStatusFilter('all')}
+                >
+                  All
+                </button>
+                <button 
+                  className={`btn ${statusFilter === 'Approved' ? 'btn-success' : 'btn-outline-success'}`}
+                  onClick={() => setStatusFilter('Approved')}
+                >
+                  Approved
+                </button>
+                <button 
+                  className={`btn ${statusFilter === 'Pending' ? 'btn-warning' : 'btn-outline-warning'}`}
+                  onClick={() => setStatusFilter('Pending')}
+                >
+                  Pending
+                </button>
+                <button 
+                  className={`btn ${statusFilter === 'Rejected' ? 'btn-danger' : 'btn-outline-danger'}`}
+                  onClick={() => setStatusFilter('Rejected')}
+                >
+                  Rejected
+                </button>
+              </div>
+
+              <div className="table-responsive">
+                <table className="table align-middle table-hover" style={{ backgroundColor: '#fff' }}>
+                  <thead style={{ backgroundColor: '#a8d5ba' }}>
+                    <tr>
+                      <th>Application ID</th>
+                      <th>Applicant Name</th>
+                      <th>Card Type</th>
+                      <th>Status</th>
+                      <th>Application Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredByStatus.map((app) => (
+                      <tr key={app.id}>
+                        <td>{app.id}</td>
+                        <td>{app.name}</td>
+                        <td>
+                          <span className="badge bg-secondary">{app.cardType}</span>
+                        </td>
+                        <td>
+                          <span className={`badge ${
+                            app.status === 'Approved' ? 'bg-success' : 
+                            app.status === 'Pending' ? 'bg-warning text-dark' : 
+                            'bg-danger'
+                          }`}>
+                            {app.status}
+                          </span>
+                        </td>
+                        <td>{new Date(app.date).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {filteredByStatus.length === 0 && (
+                <div className="text-center py-5">
+                  <h4 className="text-muted">No applications found with this status</h4>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+const ReportPage = ({ reportData, stats, onBack }) => {
+  return (
+    <>
+  
+      <div className="min-vh-100" style={{ backgroundColor: '', padding: '20px' }}>
+        <div className="container-fluid">
+          <div className="card shadow-sm" style={{ border: '' }}>
+            <div className="card-body" style={{ backgroundColor: '' }}>
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                <button className="btn btn-secondary" onClick={onBack}>
+                  ← Back 
+                </button>
+                <h1 className="fw-bold mb-0" style={{color:"#007b8f"}}>Approval Report</h1>
+                <div style={{ width: '100px' }}></div>
+              </div>
+
+              <div className="row mb-4">
+                <div className="col-12">
+                  <div className="card" style={{ backgroundColor: '', border: '1px solid #000' }}>
+                    <div className="card-body">
+                      <h4 className="text-center mb-3">Overall Statistics</h4>
+                      <div className="row text-center">
+                        <div className="col-6 col-md-3">
+                          <h6>Total Applications</h6>
+                          <h3 className="fw-bold">{stats.total}</h3>
+                        </div>
+                        <div className="col-6 col-md-3">
+                          <h6>Approved</h6>
+                          <h3 className="fw-bold text-success">{stats.approved}</h3>
+                        </div>
+                        <div className="col-6 col-md-3">
+                          <h6>Pending</h6>
+                          <h3 className="fw-bold text-warning">{stats.pending}</h3>
+                        </div>
+                        <div className="col-6 col-md-3">
+                          <h6>Rejected</h6>
+                          <h3 className="fw-bold text-danger">{stats.rejected}</h3>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="row mb-4">
+                <div className="col-12">
+                  <h4 className="mb-3">Approval Rate by Card Type</h4>
+                  <div className="table-responsive">
+                    <table className="table align-middle table-hover" style={{ backgroundColor: '#fff' }}>
+                      <thead style={{ backgroundColor: '#dbd8e3' }}>
+                        <tr>
+                          <th>Card Type</th>
+                          <th>Total Applications</th>
+                          <th>Approved Applications</th>
+                          <th>Approval Rate</th>
+                          <th>Visual Progress</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {reportData.map((data) => (
+                          <tr key={data.cardType}>
+                            <td className="fw-bold">{data.cardType}</td>
+                            <td>{data.total}</td>
+                            <td>{data.approved}</td>
+                            <td>
+                              <span className={`badge fs-6 ${
+                                parseFloat(data.percentage) >= 70 ? 'bg-success' : 
+                                parseFloat(data.percentage) >= 50 ? 'bg-warning text-dark' : 
+                                'bg-danger'
+                              }`}>
+                                {data.percentage}%
+                              </span>
+                            </td>
+                            <td>
+                              <div className="progress" style={{ height: '25px' }}>
+                                <div 
+                                  className={`progress-bar ${
+                                    parseFloat(data.percentage) >= 70 ? 'bg-success' : 
+                                    parseFloat(data.percentage) >= 50 ? 'bg-warning' : 
+                                    'bg-danger'
+                                  }`}
+                                  style={{ width: `${data.percentage}%` }}
+                                >
+                                  {data.percentage}%
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <div className="row">
+                {reportData.map((data) => (
+                  <div key={data.cardType} className="col-12 col-md-6 col-lg-3 mb-3">
+                    <div className="card h-100" style={{ 
+                      backgroundColor: '', 
+                      border: '2px solid #000',
+                      borderRadius: '10px'
+                    }}>
+                      <div className="card-body text-center">
+                        <h5 className="fw-bold">{data.cardType}</h5>
+                        <div className="my-3">
+                          <div style={{ 
+                            width: '100px', 
+                            height: '100px', 
+                            margin: '0 auto',
+                            borderRadius: '50%',
+                            background: `conic-gradient(#28a745 ${data.percentage}%, #e0e0e0 0)`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <div style={{
+                              width: '80px',
+                              height: '80px',
+                              borderRadius: '50%',
+                              backgroundColor: '#fff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: 'bold',
+                              fontSize: '1.2rem'
+                            }}>
+                              {data.percentage}%
+                            </div>
+                          </div>
+                        </div>
+                        <p className="mb-1"><strong>Total:</strong> {data.total}</p>
+                        <p className="mb-0"><strong>Approved:</strong> {data.approved}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="text-center mt-4">
+                <button className="btn btn-primary btn-lg" onClick={() => window.print()}>
+                  Print Report
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default Dashboard
