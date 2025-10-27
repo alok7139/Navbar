@@ -1,3 +1,121 @@
+import React, { useState } from "react";
+
+const API_BASE = "http://localhost:8080";
+
+export default function MyApplications() {
+  const [token, setToken] = useState("");
+  const [applications, setApplications] = useState([]);
+  const [error, setError] = useState("");
+
+  const handleMyApplications = async () => {
+    if (!token.trim()) {
+      setError("Please enter a token");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/api/application/my-applications`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setApplications(result);
+        setError("");
+      } else {
+        setError(result.error || "Failed to fetch data");
+      }
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  return (
+    <div className="container py-5">
+      <h2 className="fw-bold mb-4 text-center">My Applications</h2>
+
+      {/* Token Input */}
+      <div className="d-flex gap-2 justify-content-center mb-4">
+        <input
+          type="text"
+          className="form-control w-50"
+          placeholder="Enter Auth Token"
+          value={token}
+          onChange={(e) => setToken(e.target.value)}
+        />
+        <button className="btn btn-primary" onClick={handleMyApplications}>
+          Load Applications
+        </button>
+      </div>
+
+      {/* Error display */}
+      {error && <p className="text-danger text-center">{error}</p>}
+
+      {/* Data Display */}
+      {applications.length > 0 ? (
+        <div className="row">
+          {applications.map((app) => (
+            <div key={app.appId} className="col-md-6 mb-4">
+              <div className="card shadow-sm p-3 border-0">
+                <h5 className="fw-bold">{app.fullName}</h5>
+                <p><strong>Email:</strong> {app.email}</p>
+                <p><strong>Phone:</strong> {app.phoneNumber}</p>
+                <p><strong>DOB:</strong> {app.dateOfBirth}</p>
+                <p><strong>Address:</strong> {app.address}</p>
+                <p><strong>Card Type:</strong> {app.cardType}</p>
+
+                <p>
+                  <strong>Document Status: </strong>
+                  <span
+                    className={
+                      app.documentVerificationStatus === "APPROVED"
+                        ? "text-success fw-bold"
+                        : app.documentVerificationStatus === "REJECTED"
+                        ? "text-danger fw-bold"
+                        : "text-warning fw-bold"
+                    }
+                  >
+                    {app.documentVerificationStatus}
+                  </span>
+                </p>
+
+                <p>
+                  <strong>Offer Status: </strong>
+                  <span
+                    className={
+                      app.offerStatus === "APPROVED"
+                        ? "text-success fw-bold"
+                        : app.offerStatus === "REJECTED"
+                        ? "text-danger fw-bold"
+                        : "text-warning fw-bold"
+                    }
+                  >
+                    {app.offerStatus}
+                  </span>
+                </p>
+
+                <p><strong>Submitted At:</strong> {new Date(app.submittedAt).toLocaleString()}</p>
+                <p><strong>Last Updated:</strong> {new Date(app.updatedAt).toLocaleString()}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        !error && <p className="text-center">No applications found</p>
+      )}
+    </div>
+  );
+}
+
+
+
+
+
+
+
+
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './UserStatus.css';
