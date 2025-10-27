@@ -1,0 +1,183 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { FileText, Calendar, CheckCircle, XCircle, Filter, X, Search, Eye } from 'lucide-react';
+import VerificationDetails from './VerificationDetails';
+import './DocumentVerificationApp.css';
+
+const API_BASE = "http://localhost:8080"; // Change if needed
+
+const DocumentVerificationApp = () => {
+  const [view, setView] = useState('list');
+  const [selectedApp, setSelectedApp] = useState(null);
+  const [applications, setApplications] = useState([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const [showReasonModal, setShowReasonModal] = useState(false);
+  const [selectedReason, setSelectedReason] = useState('');
+
+  const [filters, setFilters] = useState({
+    search: '',
+    status: 'all',
+    cardType: 'all'
+  });
+
+  const token = localStorage.getItem("token");
+
+  // ✅ Fetch pending applications from API
+  const fetchPendingApplications = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/document-verification/pending`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const mapped = res.data.map(app => ({
+        id: app.appId,
+        userName: app.fullName,
+        email: app.email,
+        phone: app.phoneNumber,
+        submittedDate: app.submittedAt?.split("T")[0],
+        status: app.documentVerificationStatus.toLowerCase(),
+        cardType: app.cardType
+      }));
+
+      setApplications(mapped);
+
+    } catch (err) {
+      console.error("Fetch error", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchPendingApplications();
+  }, []);
+
+  const filteredApplications = applications.filter(app => {
+    const s = filters.search.toLowerCase();
+    const searchMatch =
+      app.userName.toLowerCase().includes(s) ||
+      app.id.toLowerCase().includes(s) ||
+      app.email.toLowerCase().includes(s) ||
+      app.phone.includes(filters.search) ||
+      app.submittedDate.includes(filters.search) ||
+      app.cardType.toLowerCase().includes(s);
+
+    const statusMatch = filters.status === "all" || app.status === filters.status;
+    const cardMatch = filters.cardType === "all" || app.cardType === filters.cardType.toUpperCase();
+
+    return searchMatch && statusMatch && cardMatch;
+  });
+
+  const stats = {
+    total: applications.length,
+    pending: applications.filter(a => a.status === "in_progress").length
+  };
+
+  const getStatusBadge = (status) => {
+    const badges = {
+      in_progress: { class: 'status-inprogress', icon: <Calendar size={16} />, text: 'Progress' },
+      approved: { class: 'status-approved', icon: <CheckCircle size={16} />, text: 'Approved' },
+      rejected: { class: 'status-rejected', icon: <XCircle size={16} />, text: 'Rejected' }
+    };
+
+    const badge = badges[status] || badges.in_progress;
+
+    return (
+      <span className={`status-badge ${badge.class}`}>
+        {badge.icon}
+        {badge.text}
+      </span>
+    );
+  };
+
+  // ✅ Click Verify → Switch to details view
+  const handleVerify = (app) => {
+    setSelectedApp(app);
+    setView("details");
+  };
+
+  if (view === "details" && selectedApp) {
+    return <VerificationDetails
+      application={selectedApp}
+      onBack={() => {
+        setSelectedApp(null);
+        setView("list");
+        fetchPendingApplications(); // Refresh list after action
+      }}
+    />;
+  }
+
+  return (
+    <div className="verification-container">
+      <header className="verification-header">
+        <div className="header-content">
+          <div className="header-left">
+            <h1 className="page-title">Document Verification</h1>
+            <p className="page-subtitle">Review and verify submitted documents</p>
+          </div>
+          <div className="header-stats">
+            <div className="stat-card">
+              <div className="stat-icon stat-icon-total">
+                <FileText size={24} />
+              </div>
+              <div className="stat-info">
+                <p className="stat-label">Total Applications</p>
+                <p className="stat-value">{stats.total}</p>
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon stat-icon-pending">
+                <Calendar size={24} />
+              </div>
+              <div className="stat-info">
+                <p className="stat-label">Pending Review</p>
+                <p className="stat-value">{stats.pending}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* ✅ Table SAME as your UI */}
+      <div className="verification-content">
+        <div className="table-container">
+          <div className="table-wrapper">
+            {filteredApplications.length > 0 ? (
+              <table className="applications-table">
+                <thead>
+                  <tr>
+                    <th>Application ID</th>
+                    <th>User Name</th>
+                    <th>Phone</th>
+                    <th>Submitted Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredApplications.map((app, idx) => (
+                    <tr key={app.id}>
+                      <td><span className="app-id">{app.id}</span></td>
+                      <td><div className="user-name">{app.userName}</div></td>
+                      <td><span className="phone-text">{app.phone}</span></td>
+                      <td><span className="date-text">{app.submittedDate}</span></td>
+                      <td>{getStatusBadge(app.status)}</td>
+                      <td>
+                        <button className="verify-btn" onClick={() => handleVerify(app)}>
+                          <Eye size={18} />
+                          Verify
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>No pending applications found.</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DocumentVerificationApp;
