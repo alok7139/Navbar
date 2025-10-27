@@ -200,6 +200,318 @@ export default function OfferConfirmation() {
 
 
 
+// get
+import React, { useEffect, useRef, useState, useMemo } from "react";
+import axios from "axios";
+import { Modal } from "bootstrap";
+
+const API_BASE = "http://localhost:8080";
+
+export default function OfferConfirmation() {
+  const [data, setData] = useState([]);
+  const [who, setWho] = useState(null);
+  const [disabledIds, setDisabledIds] = useState(new Set());
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState("All");
+  const [sortDir, setSortDir] = useState("oldest");
+  const [loading, setLoading] = useState(true);
+
+  const [rejectReason, setRejectReason] = useState("");
+  const [actionWho, setActionWho] = useState(null);
+
+  const modalRef = useRef(null);
+  const bsModal = useRef(null);
+
+  const token = localStorage.getItem("token");
+
+  // ✅ Init Credit Score Modal
+  useEffect(() => {
+    if (modalRef.current && !bsModal.current) {
+      bsModal.current = new Modal(modalRef.current, {
+        backdrop: "static",
+        keyboard: true,
+      });
+    }
+  }, []);
+
+  // ✅ Fetch Approved Applications
+  const fetchApprovedData = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`${API_BASE}/api/offer/approved`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setData(res.data || []);
+    } catch (err) {
+      console.error("Fetch Error:", err);
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchApprovedData();
+  }, []);
+
+  const toTime = (d) => new Date(d).getTime();
+
+  const filteredAndSorted = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    let rows = data.filter((r) => {
+      const s = r.fullName?.toLowerCase() || "";
+      const searchMatch = q === "" || s.includes(q);
+      const statusMatch = status === "All" || r.documentVerificationStatus === status;
+      return searchMatch && statusMatch;
+    });
+
+    return rows.sort((a, b) =>
+      sortDir === "oldest"
+        ? toTime(a.submittedAt) - toTime(b.submittedAt)
+        : toTime(b.submittedAt) - toTime(a.submittedAt)
+    );
+  }, [data, query, status, sortDir]);
+
+  // ✅ Click → Fetch Credit Score → Show Modal
+  const handleActionClick = async (row) => {
+    if (disabledIds.has(row.appId)) return;
+
+    setDisabledIds((prev) => new Set(prev).add(row.appId));
+
+    try {
+      const res = await axios.get(`${API_BASE}/api/offer/credit-score/${row.appId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const updatedRow = { ...row, ...res.data };
+      setWho(updatedRow);
+      bsModal.current?.show();
+    } catch (err) {
+      console.error("Credit Score Error:", err);
+      alert("Unable to generate credit score!");
+      setDisabledIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(row.appId);
+        return newSet;
+      });
+    }
+  };
+
+  // ✅ Approve/Reject API call
+  const processOffer = async (row, action) => {
+    try {
+      const payload = {
+        appId: row.appId,
+        action,
+        creditScore: row.creditScore,
+      };
+
+      if (action === "REJECTED") {
+        payload.rejectReason = rejectReason;
+      }
+
+      await axios.post(`${API_BASE}/api/offer/process`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      alert(`✅ Application ${action}`);
+      fetchApprovedData(); // Refresh table
+      setRejectReason("");
+      bsModal.current?.hide();
+    } catch (err) {
+      console.error("Offer Process Error:", err);
+      alert("❌ Failed to update status");
+    }
+  };
+
+  // ✅ Reject Modal Controls
+  const openRejectPopup = (row) => {
+    setActionWho(row);
+    const mdl = new Modal(document.getElementById("rejectModal"));
+    mdl.show();
+  };
+
+  const confirmReject = () => {
+    const mdl = Modal.getInstance(document.getElementById("rejectModal"));
+    mdl.hide();
+    processOffer(actionWho, "REJECTED");
+  };
+
+  return (
+    <div className="container py-4">
+      <h1 className="mb-3"
+        style={{ backgroundImage: "linear-gradient(to bottom, #007b8f, #00434e)", WebkitBackgroundClip: "text", color: "transparent" }}>
+        Offer Confirmation
+      </h1>
+
+      {/* 🔍 Filters */}
+      <div className="mb-3 d-flex gap-2 flex-wrap">
+        <input className="form-control" style={{ maxWidth: 260 }}
+          placeholder="search by name"
+          value={query} onChange={(e) => setQuery(e.target.value)} />
+
+        <select className="form-select" style={{ maxWidth: 180 }}
+          value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option>All</option>
+          <option value="APPROVED">Approved</option>
+          <option value="REJECTED">Rejected</option>
+        </select>
+
+        <select className="form-select" style={{ maxWidth: 200 }}
+          value={sortDir} onChange={(e) => setSortDir(e.target.value)}>
+          <option value="oldest">Date (Oldest First)</option>
+          <option value="newest">Date (Newest First)</option>
+        </select>
+      </div>
+
+      {loading ? (
+        <p className="text-center">Loading...</p>
+      ) : (
+        <div className="table-responsive">
+          <table className="table align-middle table-hover">
+            <thead>
+              <tr>
+                <th>APPLICANT NO</th>
+                <th>APPLICANT NAME</th>
+                <th>APPLICATION DATE</th>
+                <th>DOCUMENT STATUS</th>
+                <th>Card Type</th>
+                <th>ACTION</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {filteredAndSorted.map((r) => {
+                const isDisabled = disabledIds.has(r.appId);
+                return (
+                  <tr key={r.appId}>
+                    <td>{r.appId.substring(0, 8)}</td>
+                    <td>{r.fullName}</td>
+                    <td>{r.submittedAt?.split("T")[0]}</td>
+
+                    <td><span className="badge" style={{ backgroundColor: "#086876ff", color: "white" }}>
+                      {r.documentVerificationStatus}
+                    </span></td>
+
+                    <td>{r.cardType || "-"}</td>
+
+                    <td style={{ minWidth: 110 }}>
+                      <div className="d-flex gap-1 flex-wrap w-100">
+                        <button
+                          className="btn btn-sm"
+                          style={{ backgroundColor: "#086876ff", color: "white" }}
+                          onClick={() => handleActionClick(r)}
+                          disabled={isDisabled}>
+                          Approve
+                        </button>
+
+                        <button
+                          className="btn btn-sm"
+                          style={{ backgroundColor: "#ef5a5a", color: "white" }}
+                          onClick={() => openRejectPopup(r)}
+                          disabled={isDisabled}>
+                          Reject
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {filteredAndSorted.length === 0 && (
+                <tr><td colSpan="6" className="text-center text-muted py-3">No results</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* ✅ Credit Score Modal */}
+      <div className="modal fade" ref={modalRef}>
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content text-center">
+            <div className="modal-header">
+              <h5 className="modal-title">Credit Score Generated ✅</h5>
+              <button className="btn-close" onClick={() => bsModal.current?.hide()}></button>
+            </div>
+
+            <div className="modal-body">
+              <h5>{who?.fullName}</h5>
+              <p className="fw-bold fs-4">{who?.creditScore}</p>
+              <p className="text-muted">{who?.creditRating}</p>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn btn-primary" onClick={() => processOffer(who, "APPROVED")}>
+                Confirm Approve ✅
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ❌ Reject Reason Modal */}
+      <div className="modal fade" id="rejectModal" tabIndex="-1">
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title">Reject Offer</h5>
+              <button className="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div className="modal-body">
+              <label className="form-label">Reason for Rejection</label>
+              <textarea
+                className="form-control"
+                rows="3"
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+              />
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn btn-secondary" data-bs-dismiss="modal">
+                Cancel
+              </button>
+              <button className="btn btn-danger" onClick={confirmReject}>
+                Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p className="mt-3 small text-muted">
+        When credit score is generated, notification is sent automatically.
+      </p>
+    </div>
+  );
+}
+
+// finish
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
