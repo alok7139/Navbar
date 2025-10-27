@@ -1,3 +1,136 @@
+import React, { useState } from "react";
+import axios from "axios";
+import { ArrowLeft, CheckCircle, XCircle } from "lucide-react";
+import "./VerificationDetails.css";
+
+const API_BASE = "http://localhost:8080";
+
+const VerificationDetails = ({ application, onBack }) => {
+  const [reason, setReason] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const token = localStorage.getItem("token");
+
+  // ✅ Approve API
+  const handleApprove = async () => {
+    setLoading(true);
+    try {
+      await axios.put(
+        `${API_BASE}/api/document-verification/${application.id}/approve`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      alert("✅ Application Approved");
+      onBack();
+    } catch (err) {
+      console.error(err);
+      alert("Error approving!");
+    }
+    setLoading(false);
+  };
+
+  // ✅ Reject API
+  const handleReject = async () => {
+    if (!reason.trim()) {
+      alert("⚠ Please provide a valid reason!");
+      return;
+    }
+    setLoading(true);
+
+    try {
+      await axios.put(
+        `${API_BASE}/api/document-verification/${application.id}/reject`,
+        reason,
+        {
+          headers: {
+            "Content-Type": "text/plain",
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      alert("❌ Application Rejected");
+      onBack();
+    } catch (err) {
+      console.error(err);
+      alert("Error rejecting!");
+    }
+
+    setLoading(false);
+  };
+
+  return (
+    <div className="details-container">
+      <button className="back-btn" onClick={onBack}>
+        <ArrowLeft size={18} /> Back
+      </button>
+
+      <h2 className="details-title">
+        Application Details (ID: {application.id})
+      </h2>
+
+      <div className="details-card">
+        <p><strong>User:</strong> {application.userName}</p>
+        <p><strong>Email:</strong> {application.email}</p>
+        <p><strong>Phone:</strong> {application.phone}</p>
+        <p><strong>Card Type:</strong> {application.cardType}</p>
+        <p><strong>Submitted:</strong> {application.submittedDate}</p>
+      </div>
+
+      {/* --- Document Previews Section --- */}
+      <h3 className="documents-title">Uploaded Documents</h3>
+      <div className="document-list">
+        {application.documents?.map((doc, idx) => (
+          <div className="document-item" key={idx}>
+            <p>{doc.fileType}</p>
+            <a
+              href={`${API_BASE}/api/document/${doc.documentId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="view-doc-btn"
+            >
+              View Document
+            </a>
+          </div>
+        ))}
+      </div>
+
+      {/* Reject Reason Box */}
+      <textarea
+        className="reason-box"
+        placeholder="Enter rejection reason..."
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+      ></textarea>
+
+      <div className="action-buttons">
+        <button
+          className="approve-btn"
+          onClick={handleApprove}
+          disabled={loading}
+        >
+          <CheckCircle size={18} /> Approve
+        </button>
+
+        <button
+          className="reject-btn"
+          onClick={handleReject}
+          disabled={loading}
+        >
+          <XCircle size={18} /> Reject
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default VerificationDetails;
+
+
+
+
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FileText, Calendar, CheckCircle, XCircle, Filter, X, Search, Eye } from 'lucide-react';
