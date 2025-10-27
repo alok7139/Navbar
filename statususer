@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import "./MyApplications.css";
 
 const API_BASE = "http://localhost:8080";
 
@@ -10,7 +11,7 @@ export default function MyApplications() {
   const fetchApplications = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
-      setError("Login required to view applications");
+      setError("Please login to view your applications");
       return;
     }
 
@@ -24,11 +25,7 @@ export default function MyApplications() {
       setApplications(response.data);
       setError("");
     } catch (err) {
-      if (err.response) {
-        setError(err.response.data.error || "Failed to load applications");
-      } else {
-        setError("Network error");
-      }
+      setError("Error fetching applications");
     }
   };
 
@@ -38,59 +35,180 @@ export default function MyApplications() {
 
   return (
     <div className="container py-5">
-      <h2 className="fw-bold mb-4 text-center">My Applications Status</h2>
+      <div className="text-center mb-5">
+        <h1 className="page-title">My Credit Card Applications</h1>
+        <p className="page-subtitle">Track status of all your applied cards in one place</p>
+      </div>
 
-      {error && <p className="text-danger text-center">{error}</p>}
+      {error && <div className="alert alert-danger text-center">{error}</div>}
 
-      {applications.length > 0 ? (
-        <div className="row">
-          {applications.map((app) => (
-            <div key={app.appId} className="col-md-6 mb-4">
-              <div className="card shadow-sm p-3">
-                <h5 className="fw-bold">{app.fullName}</h5>
-                <p><strong>Email:</strong> {app.email}</p>
-                <p><strong>Phone:</strong> {app.phoneNumber}</p>
-                <p><strong>DOB:</strong> {app.dateOfBirth}</p>
-                <p><strong>Card Type:</strong> {app.cardType}</p>
+      {applications.length === 0 && !error && (
+        <p className="text-center text-muted">No applications found</p>
+      )}
 
-                <p>
-                  <strong>Document Status: </strong>
-                  <span className={
-                    app.documentVerificationStatus === "APPROVED"
-                      ? "text-success fw-bold"
-                      : app.documentVerificationStatus === "REJECTED"
-                      ? "text-danger fw-bold"
-                      : "text-warning fw-bold"
-                  }>
-                    {app.documentVerificationStatus}
-                  </span>
-                </p>
+      <div className="row g-4">
+        {applications.map((app) => {
+          const docStatus = app.documentVerificationStatus;
+          const offerStatus = app.offerStatus;
 
-                <p>
-                  <strong>Offer Status: </strong>
-                  <span className={
-                    app.offerStatus === "APPROVED"
-                      ? "text-success fw-bold"
-                      : app.offerStatus === "REJECTED"
-                      ? "text-danger fw-bold"
-                      : "text-warning fw-bold"
-                  }>
-                    {app.offerStatus}
-                  </span>
-                </p>
+          const docClass =
+            docStatus === "APPROVED"
+              ? "badge success-badge"
+              : docStatus === "REJECTED"
+              ? "badge danger-badge"
+              : "badge warning-badge";
 
-                <p><strong>Submitted:</strong> {new Date(app.submittedAt).toLocaleString()}</p>
-                <p><strong>Updated:</strong> {new Date(app.updatedAt).toLocaleString()}</p>
+          const offerClass =
+            offerStatus === "APPROVED"
+              ? "badge success-badge"
+              : offerStatus === "REJECTED"
+              ? "badge danger-badge"
+              : "badge warning-badge";
+
+          return (
+            <div className="col-md-6 col-lg-4" key={app.appId}>
+              <div className="application-card">
+                <div className="card-header">
+                  <span className="card-type">{app.cardType}</span>
+                </div>
+
+                <div className="card-body">
+                  <h5 className="applicant-name">{app.fullName}</h5>
+
+                  <div className="info-line"><strong>📩 Email:</strong> {app.email}</div>
+                  <div className="info-line"><strong>📞 Phone:</strong> {app.phoneNumber}</div>
+                  <div className="info-line"><strong>🎂 DOB:</strong> {app.dateOfBirth}</div>
+
+                  <div className="info-line">
+                    <strong>📑 Document Status:</strong>
+                    <span className={`status-chip ${docClass}`}>{docStatus}</span>
+                  </div>
+
+                  <div className="info-line">
+                    <strong>🎯 Offer Status:</strong>
+                    <span className={`status-chip ${offerClass}`}>{offerStatus}</span>
+                  </div>
+
+                  <div className="timestamp">
+                    Submitted: {new Date(app.submittedAt).toLocaleDateString()}
+                  </div>
+                </div>
+
+                <div className="card-footer">
+                  <button className="details-btn">View Details</button>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
-      ) : (
-        !error && <p className="text-center">No applications found</p>
-      )}
+          );
+        })}
+      </div>
     </div>
   );
 }
+
+
+//css
+
+.page-title {
+  background-image: linear-gradient(to bottom, #007b8f, #00434e);
+  background-clip: text;
+  color: transparent;
+  font-weight: 700;
+}
+
+.page-subtitle {
+  color: #6c757d;
+}
+
+.application-card {
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform .25s ease, box-shadow .25s ease;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .08);
+  cursor: pointer;
+}
+
+.application-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .12);
+}
+
+.card-header {
+  background: linear-gradient(to right, #007b8f, #00434e);
+  padding: 12px;
+  color: #fff;
+}
+
+.card-type {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.card-body {
+  padding: 16px 18px;
+}
+
+.applicant-name {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.info-line {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.status-chip {
+  padding: 4px 10px;
+  margin-left: 6px;
+  border-radius: 50px;
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.success-badge {
+  background: #16a34a;
+  color: white;
+}
+
+.danger-badge {
+  background: #dc2626;
+  color: white;
+}
+
+.warning-badge {
+  background: #f59e0b;
+  color: white;
+}
+
+.timestamp {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 8px;
+}
+
+.card-footer {
+  padding: 12px;
+  text-align: right;
+  background: #f8f9fa;
+}
+
+.details-btn {
+  border: none;
+  background: #007b8f;
+  color: white;
+  padding: 8px 14px;
+  font-size: 13px;
+  border-radius: 6px;
+  transition: background .25s ease;
+}
+
+.details-btn:hover {
+  background: #005b6a;
+}
+
 
 
 
