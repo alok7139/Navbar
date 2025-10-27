@@ -1,486 +1,10 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import "./MyApplications.css";
-
-const API_BASE = "http://localhost:8080";
-
-// deterministic helper to generate pseudo-card-data from appId (safe for UI only)
-const generateCardData = (appId, submittedAt) => {
-  // simple numeric hash from appId
-  const hash = Array.from(appId).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-  // build pseudo 16-digit number: take repeated hash digits and last 4 from appId
-  const last4 = appId.replace(/-/g, "").slice(-4).toUpperCase();
-  let base = ("" + hash).repeat(6).slice(0, 12); // 12 digits
-  const cardNumber = `${base}${last4}`.slice(0, 16);
-
-  // expiry: use submittedAt month/year if present, else fall back to +2 years
-  let expiryMonth = "12";
-  let expiryYear = new Date().getFullYear() + 2;
-  if (submittedAt) {
-    const dt = new Date(submittedAt);
-    if (!isNaN(dt)) {
-      expiryMonth = String(dt.getMonth() + 1).padStart(2, "0");
-      expiryYear = dt.getFullYear() + 3;
-    }
-  }
-  expiryYear = String(expiryYear).slice(-2); // last two digits
-
-  // cvv: last 3 digits of hash
-  const cvv = String(hash).slice(-3).padStart(3, "0");
-
-  return {
-    cardNumber,
-    expiryMonth,
-    expiryYear,
-    cvv,
-  };
-};
-
-const maskCard = (num) => {
-  if (!num || num.length < 4) return "**** **** **** ****";
-  const clean = num.replace(/\s+/g, "");
-  return (
-    clean.slice(0, 4) +
-    " •••• •••• " +
-    clean.slice(-4)
-  );
-};
-
-const formatCardNumberGrouped = (num) => {
-  if (!num) return "0000 0000 0000 0000";
-  const clean = num.replace(/\s+/g, "").padEnd(16, "0");
-  return clean.replace(/(.{4})/g, "$1 ").trim();
-};
-
-export default function MyApplications() {
-  const [applications, setApplications] = useState([]);
-  const [error, setError] = useState("");
-  const token = localStorage.getItem("token");
-
-  useEffect(() => {
-    if (!token) {
-      setError("Please login to view your applications.");
-      return;
-    }
-
-    const fetchApplications = async () => {
-      try {
-        const res = await axios.get(`${API_BASE}/api/application/my-applications`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setApplications(res.data || []);
-      } catch (err) {
-        console.error(err);
-        const msg =
-          err?.response?.data?.message ||
-          err?.response?.data?.error ||
-          err.message ||
-          "Failed to fetch applications";
-        setError(msg);
-      }
-    };
-
-    fetchApplications();
-  }, [token]);
-
-  const cardThemeClass = (type) => {
-    switch (type) {
-      case "PLATINUM":
-        return "theme-platinum";
-      case "GOLD":
-        return "theme-gold";
-      case "SILVER":
-      default:
-        return "theme-silver";
-    }
-  };
-
-  const statusBadgeClass = (status) => {
-    if (!status) return "status-wait";
-    if (status === "APPROVED") return "status-approved";
-    if (status === "REJECTED") return "status-rejected";
-    return "status-wait";
-  };
-
-  return (
-    <div className="apps-wrapper">
-      <h2 className="apps-title">My Credit Card Applications</h2>
-
-      {error && <div className="apps-error">{error}</div>}
-
-      {applications.length === 0 && !error ? (
-        <div className="apps-empty">No applications found.</div>
-      ) : (
-        <div className="cards-grid">
-          {applications.map((app) => {
-            // use real card fields if present, else generate deterministic ones
-            const providedCardNumber = app.cardNumber || app.cardNumberMasked || null;
-            const providedExpiryMonth = app.expiryMonth || null;
-            const providedExpiryYear = app.expiryYear || null;
-            const providedCvv = app.cvv || null;
-
-            const generated = generateCardData(app.appId || app.appId || String(Math.random()), app.submittedAt);
-
-            const cardNumberFull = providedCardNumber || generated.cardNumber;
-            const expiryMonth = providedExpiryMonth || generated.expiryMonth;
-            const expiryYear = providedExpiryYear || generated.expiryYear;
-            const cvv = providedCvv || generated.cvv;
-
-            const cardNumberGrouped = formatCardNumberGrouped(cardNumberFull);
-            const cardNumberMasked = maskCard(cardNumberFull);
-
-           return (
-  <div className="card-flip-container" key={app.appId}>
-    <div className="card-inner">
-
-      {/* FRONT */}
-      <div className={`credit-card card-front ${cardThemeClass(app.cardType || "SILVER")}`}>
-        <div className="card-top-row">
-          <div className="card-chip" />
-          <div className={`offer-badge ${statusBadgeClass(app.offerStatus)}`}>
-            {app.offerStatus || "PENDING"}
-          </div>
-        </div>
-
-        <div className="card-body-front">
-          <div className="card-number-line">{cardNumberMasked}</div>
-
-          <div className="card-meta-row">
-            <div className="card-holder">
-              <label>Card Holder</label>
-              <div>{app.fullName || "—"}</div>
-            </div>
-
-            <div className="card-expiry">
-              <label>Expiry</label>
-              <div>{expiryMonth}/{expiryYear}</div>
-            </div>
-          </div>
-
-          <div className="card-type-label">{app.cardType} CARD</div>
-        </div>
-
-        <div className="card-footer-front">
-          <small>App ID: {app.appId?.slice(0, 8)}</small>
-          <small className="submitted-on">
-            Submitted: {app.submittedAt ? new Date(app.submittedAt).toLocaleDateString() : "—"}
-          </small>
-        </div>
-      </div>
-
-      {/* BACK */}
-      <div className={`credit-card card-back ${cardThemeClass(app.cardType || "SILVER")}`}>
-        <div className="magnetic-strip" />
-        <div className="back-body">
-          <div className="back-line">
-            <label>Card Number</label>
-            <div className="mono">{cardNumberGrouped}</div>
-          </div>
-
-          <div className="back-row">
-            <div className="back-cvv">
-              <label>CVV</label>
-              <div className="mono cvv-box">{cvv}</div>
-            </div>
-
-            <div className="back-info">
-              <label>Document Status</label>
-              <div className="mono">{app.documentVerificationStatus || "PENDING"}</div>
-              <label style={{ marginTop: 8 }}>Offer Status</label>
-              <div className="mono">{app.offerStatus || "PENDING"}</div>
-            </div>
-          </div>
-
-          <div className="back-footer">
-            <small>Issued by YourBank</small>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <div className="flip-hint">Hover or tap to flip</div>
-  </div>
-);
-
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-
-
-
-//css
-
-/* Page layout */
-.apps-wrapper {
-  padding: 28px;
-  background: linear-gradient(180deg, #f6f9fc 0%, #eef4fb 100%);
-  min-height: 100vh;
-  font-family: Inter, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  color: #111827;
-}
-
-.apps-title {
-  text-align: center;
-  font-size: 28px;
-  font-weight: 700;
-  margin-bottom: 18px;
-  color: #0f172a;
-}
-
-/* grid */
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-  margin-top: 16px;
-  align-items: start;
-}
-
-/* flip container */
-.card-flip-container {
-  width: 330px;
-  height: 200px;
-  perspective: 1000px;
-  position: relative;
-}
-
-.card-inner {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  transform-style: preserve-3d;
-  transition: transform 0.9s ease-in-out;
-}
-
-/* card (both faces) */
-.credit-card {
-  width: 100%;
-  height: 100%;
-  padding: 18px;
-  border-radius: 14px;
-  position: absolute;
-  top: 0;
-  left: 0;
-  backface-visibility: hidden;
-}
-
-/* hover flip for desktop */
-.card-flip-container:hover .credit-card,
-.card-flip-container:focus-within .credit-card {
-  transform: rotateY(180deg) translateY(-6px);
-  box-shadow: 0 18px 40px rgba(2,6,23,0.18);
-}
-
-/* allow tap to flip on mobile */
-.card-flip-container:active .credit-card {
-  transform: rotateY(180deg) translateY(-6px);
-}
-
-/* shared face styles */
-.card-face {
-  position: absolute;
-  inset: 0;
-  border-radius: 16px;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 18px;
-  color: #fff;
-}
-
-/* front */
-.card-front {
-  z-index: 2;
-}
-
-/* back */
-.card-back {
-  transform: rotateY(180deg);
-}
-
-/* chip and top row */
-.card-top-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.card-chip {
-  width: 56px;
-  height: 36px;
-  border-radius: 8px;
-  background: linear-gradient(180deg, #f7f7f7, #e1e1e1);
-  box-shadow: inset 0 -3px 0 rgba(0,0,0,0.06);
-}
-
-/* offer badge (top-right) */
-.offer-badge {
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-weight: 700;
-  font-size: 12px;
-  text-transform: uppercase;
-}
-
-/* statuses */
-.status-approved { background: rgba(22,163,74,0.95); color: #fff; }
-.status-rejected { background: rgba(220,38,38,0.95); color: #fff; }
-.status-wait { background: rgba(245,158,11,0.95); color: #000; }
-
-/* front content */
-.card-body-front {
-  margin-top: 8px;
-}
-
-.card-number-line {
-  font-size: 18px;
-  letter-spacing: 3px;
-  margin: 12px 0;
-  font-weight: 600;
-}
-
-.card-meta-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-
-.card-holder label,
-.card-expiry label {
-  display:block;
-  font-size: 11px;
-  opacity: 0.85;
-  margin-bottom: 4px;
-}
-
-.card-holder div,
-.card-expiry div {
-  font-weight: 700;
-  font-size: 14px;
-}
-
-/* small text */
-.card-type-label {
-  margin-top: 8px;
-  font-weight: 700;
-  font-size: 13px;
-  opacity: 0.95;
-}
-
-/* footer */
-.card-footer-front {
-  display:flex;
-  justify-content:space-between;
-  font-size: 12px;
-  opacity: 0.9;
-}
-
-/* back styles */
-.magnetic-strip {
-  height: 40px;
-  background: rgba(0,0,0,0.35);
-  margin-top: 8px;
-  border-radius: 4px;
-}
-
-.back-body {
-  padding: 10px 0;
-  color: #0b1220;
-  background: rgba(255,255,255,0.95);
-  border-radius: 10px;
-  margin-top: 10px;
-  height: calc(100% - 80px);
-  display:flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.back-line {
-  padding: 8px 12px;
-  border-bottom: 1px solid rgba(15,23,42,0.06);
-}
-
-.back-line label {
-  font-size: 11px;
-  color: #374151;
-}
-
-.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace; font-size: 13px; color:#0b1220; }
-
-.back-row {
-  display:flex;
-  gap: 12px;
-  padding: 8px 12px;
-}
-
-.back-cvv {
-  flex: 0 0 90px;
-}
-
-.cvv-box {
-  background: #fff;
-  border-radius: 6px;
-  padding: 8px;
-  text-align:center;
-  box-shadow: 0 2px 6px rgba(2,6,23,0.06);
-}
-
-.back-info { flex:1; }
-
-/* back-footer */
-.back-footer { padding: 8px 12px; font-size: 12px; color: #475569; }
-
-/* hint */
-.flip-hint { margin-top: 8px; font-size: 12px; color: #374151; opacity: 0.85; }
-
-/* Themes: PLATINUM / GOLD / SILVER */
-
-.theme-platinum {
-  background: linear-gradient(135deg, #1f2937 0%, #3f4852 100%);
-  color: #e6e7e9;
-}
-.theme-gold {
-  /* lighter gold tone */
-  background: linear-gradient(135deg, #fff7e6 0%, #f6e3a7 45%, #e9c356 100%);
-  color: #1f1b12;
-}
-.theme-silver {
-  background: linear-gradient(135deg, #0ea5ff 0%, #0077e6 100%);
-  color: #fff;
-}
-
-/* responsive tweaks */
-@media (max-width: 640px) {
-  .credit-card { max-width: 320px; height: 190px; }
-  .card-number-line { font-size: 16px; letter-spacing: 2px; }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './UserStatus.css';
+import { toast } from 'react-toastify';
+import axios from 'axios';
  
+const API_BASE = "http://localhost:8080";
 const UserStatus = () => {
   const navigate = useNavigate();
   const [applicationData, setApplicationData] = useState(null);
@@ -491,30 +15,52 @@ const UserStatus = () => {
   useEffect(() => {
     loadApplicationStatus();
   }, []);
+
+   const token = localStorage.getItem("token");
+useEffect(() => {
+    if (!token) {
+    
+      toast.error("Please login to view your applications.")
+      return;
+    }
+
+    const fetchApplications = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/api/application/my-applications`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setApplicationData(res.data || []);
+      } catch (err) {
+        toast.error(err)
+      }
+    };
+
+    fetchApplications();
+    console.log(applicationData);
+  }, [token]);
  
   const loadApplicationStatus = () => {
-    const saved = localStorage.getItem('creditCardApplication');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setApplicationData(parsed);
+    // const saved = localStorage.getItem('creditCardApplication');
+    // if (saved) {
+      const parsed = applicationData;
      
-      if (parsed.status === 'rejected') {
+      if (parsed.documentVerificationStatus === 'REJECTED') {
         setRejectionInfo({
           stage: 2,
-          reason: parsed.rejectionReason || 'Document verification failed'
+          reason: parsed.offerRejectReason || 'Document verification failed'
         });
         setCurrentStage(2);
         setCanEdit(true);
-      } else if (parsed.status === 'in-process') {
+      } else if (parsed.documentVerificationStatus === 'IN_PROGRESS') {
         setCurrentStage(2);
         setCanEdit(true);
         setRejectionInfo(null);
-      } else if (parsed.status === 'approved') {
+      } else if (parsed.documentVerificationStatus === 'APPROVED') {
         setCurrentStage(3);
         setCanEdit(false);
         setRejectionInfo(null);
       }
-    }
+    // }
   };
  
   const stages = [
@@ -599,7 +145,7 @@ const UserStatus = () => {
               <React.Fragment key={stage.id}>
                 <div className="progress-step">
                   <div className={`progress-circle ${
-                    isRejected ? 'rejected' :
+                    isRejected ? 'REJECTED' :
                     isCompleted ? 'completed' :
                     isCurrent ? 'current' : 'pending'
                   }`}>
@@ -634,7 +180,7 @@ const UserStatus = () => {
                
                 {index < stages.length - 1 && (
                   <div className={`progress-line ${
-                    isRejected ? 'rejected' :
+                    isRejected ? 'REJECTED' :
                     currentStage > stage.id ? 'completed' : 'pending'
                   }`}></div>
                 )}
@@ -702,13 +248,14 @@ const UserStatus = () => {
             <div className="info-item">
               <span className="info-label">Applicant Name</span>
               <span className="info-value">
-                {applicationData.firstName} {applicationData.lastName}
+                {applicationData.fullName}
+               
               </span>
             </div>
             <div className="info-item">
               <span className="info-label">Application ID</span>
               <span className="info-value">
-                #{applicationData.id.slice(0, 10)}
+                {applicationData.appId}
               </span>
             </div>
             <div className="info-item">
@@ -717,7 +264,7 @@ const UserStatus = () => {
             </div>
             <div className="info-item">
               <span className="info-label">Contact Number</span>
-              <span className="info-value">{applicationData.contactNumber}</span>
+              <span className="info-value">{applicationData.phoneNumber}</span>
             </div>
             <div className="info-item">
               <span className="info-label">Card Type</span>
