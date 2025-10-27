@@ -4,210 +4,206 @@ import "./MyApplications.css";
 
 const API_BASE = "http://localhost:8080";
 
-export default function MyApplications() {
+const MyApplications = () => {
   const [applications, setApplications] = useState([]);
-  const [error, setError] = useState("");
+  const token = localStorage.getItem("token");
 
-  const fetchApplications = async () => {
-    const token = localStorage.getItem("token");
+  useEffect(() => {
     if (!token) {
-      setError("Please login to view your applications");
+      console.warn("No token found, please login.");
       return;
     }
 
-    try {
-      const response = await axios.get(`${API_BASE}/api/application/my-applications`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    axios
+      .get(`${API_BASE}/api/application/my-applications`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setApplications(res.data))
+      .catch((err) => console.error("Error fetching apps:", err));
+  }, [token]);
 
-      setApplications(response.data);
-      setError("");
-    } catch (err) {
-      setError("Error fetching applications");
+  const getCardClass = (type) => {
+    switch (type) {
+      case "PLATINUM":
+        return "card-platinum";
+      case "GOLD":
+        return "card-gold";
+      case "SILVER":
+      default:
+        return "card-silver";
     }
   };
 
-  useEffect(() => {
-    fetchApplications();
-  }, []);
+  const getStatusBadgeClass = (status) => {
+    if (status === "APPROVED") return "badge-approved";
+    if (status === "REJECTED") return "badge-rejected";
+    return "badge-progress";
+  };
 
   return (
-    <div className="container py-5">
-      <div className="text-center mb-5">
-        <h1 className="page-title">My Credit Card Applications</h1>
-        <p className="page-subtitle">Track status of all your applied cards in one place</p>
-      </div>
+    <div className="apps-container">
+      <h2 className="page-title">My Credit Card Applications</h2>
 
-      {error && <div className="alert alert-danger text-center">{error}</div>}
-
-      {applications.length === 0 && !error && (
-        <p className="text-center text-muted">No applications found</p>
-      )}
-
-      <div className="row g-4">
-        {applications.map((app) => {
-          const docStatus = app.documentVerificationStatus;
-          const offerStatus = app.offerStatus;
-
-          const docClass =
-            docStatus === "APPROVED"
-              ? "badge success-badge"
-              : docStatus === "REJECTED"
-              ? "badge danger-badge"
-              : "badge warning-badge";
-
-          const offerClass =
-            offerStatus === "APPROVED"
-              ? "badge success-badge"
-              : offerStatus === "REJECTED"
-              ? "badge danger-badge"
-              : "badge warning-badge";
-
-          return (
-            <div className="col-md-6 col-lg-4" key={app.appId}>
-              <div className="application-card">
-                <div className="card-header">
-                  <span className="card-type">{app.cardType}</span>
-                </div>
-
-                <div className="card-body">
-                  <h5 className="applicant-name">{app.fullName}</h5>
-
-                  <div className="info-line"><strong>📩 Email:</strong> {app.email}</div>
-                  <div className="info-line"><strong>📞 Phone:</strong> {app.phoneNumber}</div>
-                  <div className="info-line"><strong>🎂 DOB:</strong> {app.dateOfBirth}</div>
-
-                  <div className="info-line">
-                    <strong>📑 Document Status:</strong>
-                    <span className={`status-chip ${docClass}`}>{docStatus}</span>
-                  </div>
-
-                  <div className="info-line">
-                    <strong>🎯 Offer Status:</strong>
-                    <span className={`status-chip ${offerClass}`}>{offerStatus}</span>
-                  </div>
-
-                  <div className="timestamp">
-                    Submitted: {new Date(app.submittedAt).toLocaleDateString()}
-                  </div>
-                </div>
-
-                <div className="card-footer">
-                  <button className="details-btn">View Details</button>
+      {applications.length === 0 ? (
+        <p className="no-data">No applications found.</p>
+      ) : (
+        <div className="cards-list">
+          {applications.map((app) => (
+            <div className={`credit-card ${getCardClass(app.cardType)}`} key={app.appId}>
+              <div className="card-header">
+                <span className="card-chip"></span>
+                <div className={`status-badge ${getStatusBadgeClass(app.offerStatus)}`}>
+                  {app.offerStatus}
                 </div>
               </div>
+
+              <div className="card-content">
+                <h3 className="card-holder">{app.fullName}</h3>
+                <p className="card-number">📞 {app.phoneNumber}</p>
+                <p className="card-expiry">🎂 {app.dateOfBirth}</p>
+                <p className="card-email">✉ {app.email}</p>
+                <p className="card-type-text">{app.cardType} CARD</p>
+              </div>
+
+              <div className="card-footer">
+                <small>Submitted: {new Date(app.submittedAt).toLocaleDateString()}</small>
+              </div>
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
-}
+};
+
+export default MyApplications;
+
 
 
 //css
 
+.apps-container {
+  padding: 20px;
+  text-align: center;
+  background: #f4f7fc;
+  min-height: 100vh;
+}
+
 .page-title {
-  background-image: linear-gradient(to bottom, #007b8f, #00434e);
-  background-clip: text;
-  color: transparent;
-  font-weight: 700;
+  font-size: 26px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #222;
 }
 
-.page-subtitle {
-  color: #6c757d;
-}
-
-.application-card {
-  border-radius: 12px;
-  overflow: hidden;
-  transition: transform .25s ease, box-shadow .25s ease;
-  background: #fff;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, .08);
-  cursor: pointer;
-}
-
-.application-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, .12);
-}
-
-.card-header {
-  background: linear-gradient(to right, #007b8f, #00434e);
-  padding: 12px;
-  color: #fff;
-}
-
-.card-type {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.card-body {
-  padding: 16px 18px;
-}
-
-.applicant-name {
+.no-data {
+  margin-top: 30px;
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 500;
+  color: gray;
+}
+
+.cards-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 22px;
+  padding: 10px;
+}
+
+.credit-card {
+  padding: 18px;
+  border-radius: 18px;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.credit-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+}
+
+/* Chip icon */
+.card-chip {
+  width: 45px;
+  height: 32px;
+  background: linear-gradient(#d6d6d6, #8e8e8e);
+  border-radius: 6px;
   margin-bottom: 10px;
+  display: inline-block;
 }
 
-.info-line {
-  font-size: 14px;
-  margin-bottom: 4px;
+/* Card Theme */
+.card-platinum {
+  background: linear-gradient(135deg, #2e2e2e, #555);
 }
 
-.status-chip {
-  padding: 4px 10px;
-  margin-left: 6px;
-  border-radius: 50px;
-  font-size: 12px;
-  text-transform: capitalize;
+.card-gold {
+  background: linear-gradient(135deg, #d4af37, #b8901a);
 }
 
-.success-badge {
-  background: #16a34a;
-  color: white;
+.card-silver {
+  background: linear-gradient(135deg, #007bff, #0046a5);
 }
 
-.danger-badge {
-  background: #dc2626;
-  color: white;
-}
-
-.warning-badge {
-  background: #f59e0b;
-  color: white;
-}
-
-.timestamp {
-  font-size: 12px;
-  color: #6b7280;
+/* Text layout */
+.card-content {
+  text-align: left;
   margin-top: 8px;
 }
 
-.card-footer {
-  padding: 12px;
-  text-align: right;
-  background: #f8f9fa;
+.card-holder {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 6px 0;
 }
 
-.details-btn {
-  border: none;
-  background: #007b8f;
-  color: white;
-  padding: 8px 14px;
+.card-number,
+.card-email {
+  font-size: 15px;
+}
+
+.card-type-text {
+  font-size: 17px;
+  margin-top: 8px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+/* Status badge */
+.status-badge {
+  padding: 5px 10px;
   font-size: 13px;
-  border-radius: 6px;
-  transition: background .25s ease;
+  border-radius: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
 }
 
-.details-btn:hover {
-  background: #005b6a;
+.badge-approved {
+  background: #1dd12a;
+  color: #fff;
 }
+
+.badge-rejected {
+  background: #ff2f2f;
+  color: white;
+}
+
+.badge-progress {
+  background: #ffb400;
+  color: black;
+}
+
+/* Footer */
+.card-footer {
+  margin-top: 12px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
 
 
 
