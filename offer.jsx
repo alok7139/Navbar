@@ -1,11 +1,15 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { Modal } from 'bootstrap';
 
-export default function OfferPage() {
+
+
+
+export default function OfferConfirmation() {
   const [who, setWho] = useState(null);
   const [disabledIds, setDisabledIds] = useState(new Set());
-  const [query, setQuery] = useState(''); // search by name [web:21][web:23]
-  const [status, setStatus] = useState('All'); // All | Approved | Rejected [web:21][web:35]
-  const [sortDir, setSortDir] = useState('oldest'); // oldest | newest [web:26][web:30]
+  const [query, setQuery] = useState(''); 
+  const [status, setStatus] = useState('All'); 
+  const [sortDir, setSortDir] = useState('oldest'); 
 
   const modalRef = useRef(null);
   const bsModal = useRef(null);
@@ -67,22 +71,22 @@ export default function OfferPage() {
     },
   ];
 
-  // Robust date parser to epoch time for sort reliability [web:39][web:30]
+  
   const toTime = (d) => new Date(d).getTime();
 
-  // Combine search, status filter, and sort in one memoized derivation [web:21][web:26]
+
   const filteredAndSorted = useMemo(() => {
     const q = query.trim().toLowerCase();
     let rows = data.filter((r) => {
-      const matchesSearch = q === '' || r.name.toLowerCase().includes(q); // case-insensitive [web:23][web:32]
-      const matchesStatus = status === 'All' || r.action === status; // action considered as status [web:21][web:35]
+      const matchesSearch = q === '' || r.name.toLowerCase().includes(q); 
+      const matchesStatus = status === 'All' || r.action === status; 
       return matchesSearch && matchesStatus;
     });
 
     rows = rows.sort((a, b) => {
       const ta = toTime(a.date);
       const tb = toTime(b.date);
-      return sortDir === 'oldest' ? ta - tb : tb - ta; // numeric comparison [web:39][web:30]
+      return sortDir === 'oldest' ? ta - tb : tb - ta; 
     });
 
     return rows;
@@ -95,11 +99,16 @@ export default function OfferPage() {
     if (row.action === 'Approved') {
       bsModal.current?.show();
     }
+    else if(row.action === 'Rejected'){
+      alert(`Notification sent to ${row.name}: Your credit card request is Rejected.`)
+    }
   };
 
   return (
     <div className="container py-4">
-      <h4 className="mb-3">Offer Confirmation</h4>
+      <div className='header-ledt'>
+          <h1 className="mb-3 " style={{ backgroundImage:"linear-gradient(to bottom, #007b8f, #00434e)" , WebkitBackgroundClip:"text" , backgroundClip:"text" , color:"transparent" , WebkitTextFillColor:"transparent"}}>Offer Confirmation</h1>
+      </div>
 
       <div className="mb-3 d-flex gap-2 flex-wrap">
         <input
@@ -116,8 +125,8 @@ export default function OfferPage() {
           onChange={(e) => setStatus(e.target.value)}
         >
           <option>All</option>
-          <option>Approved</option>
-          <option>Rejected</option>
+          <option value={"Approved"}>Approved</option>
+          <option value={"Rejected"}>Rejected</option>
         </select>
         <select
           className="form-select"
@@ -132,7 +141,7 @@ export default function OfferPage() {
 
       <div className="table-responsive">
         <table className="table align-middle table-hover">
-          <thead className="table-success">
+          <thead className="" style={{color:""}}>
             <tr>
               <th>APPLICANT NO</th>
               <th>APPLICANT NAME</th>
@@ -140,7 +149,7 @@ export default function OfferPage() {
               <th>DOCUMENT STATUS</th>
               <th>CREDIT SCORE</th>
               <th>APPROVED LIMIT</th>
-              <th>ACTION</th>
+              <th style={{ marginBottom:"30px"}}>ACTION</th>
             </tr>
           </thead>
           <tbody>
@@ -152,21 +161,27 @@ export default function OfferPage() {
                   <td>{r.name}</td>
                   <td>{r.date}</td>
                   <td>
-                    <span className="badge text-bg-success">{r.doc}</span>
+                    <span className="badge text-bg" style={{backgroundColor:"#086876ff" , color:"white"}}>{r.doc}</span>
                   </td>
                   <td>{r.score}</td>
                   <td>{r.limit}</td>
-                  <td>
-                    <button
-                      className={`btn btn-sm ${
-                        r.action === 'Approved' ? 'btn-success' : 'btn-danger'
-                      }`}
-                      onClick={() => handleActionClick(r)}
-                      disabled={isDisabled}
-                    >
-                      {r.action}
-                    </button>
-                  </td>
+                  
+
+                  <td style={{minWidth:110 }}>
+                       <div className='d-flex gap-1 flex-wrap w-100'>
+                                 <button className="btn btn-sm  " style={{backgroundColor:"#086876ff" , color:"white"}}
+                               onClick={() => handleActionClick({ ...r, action: 'Approved' })}
+                       disabled={isDisabled}>Approve
+                      </button>
+                        <button
+                       className="btn btn-sm  " style={{backgroundColor:"#ef5a5a" ,color:"white"}}
+                       onClick={() => handleActionClick({ ...r, action: 'Rejected' })}
+                        disabled={isDisabled}
+                          >
+                            Reject
+                         </button>
+                       </div>
+                 </td>
                 </tr>
               );
             })}
@@ -181,7 +196,7 @@ export default function OfferPage() {
         </table>
       </div>
 
-      {/* Bootstrap Modal markup */}
+    
       <div className="modal fade" tabIndex="-1" ref={modalRef}>
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
@@ -201,7 +216,7 @@ export default function OfferPage() {
             </div>
             <div className="modal-footer">
               <button
-                className="btn btn-primary"
+                className="btn " style={{backgroundColor:"#035461ff" , color:"white"}}
                 onClick={() => bsModal.current?.hide()}
               >
                 OK
@@ -218,29 +233,3 @@ export default function OfferPage() {
     </div>
   );
 }
-
-
-
-<td className="d-flex gap-2">
-  <button
-    className="btn btn-sm btn-success"
-    onClick={() => handleActionClick({ ...r, action: 'Approved' })}
-    disabled={isDisabled}
-  >
-    Approve
-  </button>
-  <button
-    className="btn btn-sm btn-danger"
-    onClick={() => handleActionClick({ ...r, action: 'Rejected' })}
-    disabled={isDisabled}
-  >
-    Reject
-  </button>
-</td>
-
-
-
-
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-<script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script> <!-- provides window.bootstrap + Popper --> [web:50][web:67]
