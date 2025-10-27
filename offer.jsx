@@ -488,6 +488,36 @@ export default function OfferConfirmation() {
   );
 }
 
+
+
+
+
+<td style={{ minWidth: 110 }}>
+  {r.offerStatus === "APPROVED" ? (
+    <span className="badge bg-success">✅ Approved</span>
+  ) : r.offerStatus === "REJECTED" ? (
+    <span className="badge bg-danger">❌ Rejected</span>
+  ) : (
+    <div className="d-flex gap-1 flex-wrap w-100">
+      <button
+        className="btn btn-sm"
+        style={{ backgroundColor: "#086876ff", color: "white" }}
+        onClick={() => handleActionClick(r)}
+      >
+        Approve
+      </button>
+
+      <button
+        className="btn btn-sm"
+        style={{ backgroundColor: "#ef5a5a", color: "white" }}
+        onClick={() => openRejectPopup(r)}
+      >
+        Reject
+      </button>
+    </div>
+  )}
+</td>
+
 // finish
 
 
