@@ -127,7 +127,7 @@ const VerificationDetails = ({
                     {/* {console.log(application.id)} */}
                     {/* <p className="document-name">{application.aadhar}</p> */}
                   </div>
-                  <button className="view-document-btn" onClick={() => handlePreview(application.id , application.aadharFilename )}>
+                  <button className="view-document-btn" onClick={() => handlePreview({appId:application.id , docType:'aadhar' })}>
                     <Eye size={20} />
                   </button>
                 </div>
@@ -139,7 +139,7 @@ const VerificationDetails = ({
                     <p className="document-label">{"Pan"}</p>
                     {/* <p className="document-name">{application.pan}</p> */}
                   </div>
-                  <button className="view-document-btn" onClick={() =>handlePreview({appId:application.id , docType:application.panFilename})}>
+                  <button className="view-document-btn" onClick={() =>handlePreview({appId:application.id , docType:'pan'})}>
                     <Eye size={20} />
                   </button>
                 </div>
@@ -151,7 +151,7 @@ const VerificationDetails = ({
                     <p className="document-label">{"Income"}</p>
                     {/* <p className="document-name">{application.income}</p> */}
                   </div>
-                  <button className="view-document-btn" onClick={() =>handlePreview(application.id , application.incomeProofFilename)}>
+                  <button className="view-document-btn" onClick={() =>handlePreview({appId:application.id , docType:'income-proof'})}>
                     <Eye size={20} />
                   </button>
                 </div>
