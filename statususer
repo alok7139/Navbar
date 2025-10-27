@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 const API_BASE = "http://localhost:8080";
 
@@ -7,27 +8,27 @@ export default function MyApplications() {
   const [error, setError] = useState("");
 
   const fetchApplications = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("Login required to view applications");
+      return;
+    }
+
     try {
-      const response = await fetch(`${API_BASE}/api/application/all`);
+      const response = await axios.get(`${API_BASE}/api/application/my-applications`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      let result;
-      const contentType = response.headers.get("content-type");
-
-      if (contentType && contentType.includes("application/json")) {
-        result = await response.json();
-      } else {
-        result = await response.text();
-        throw new Error(result); // force error state with plain text message
-      }
-
-      if (response.ok) {
-        setApplications(result);
-        setError("");
-      } else {
-        setError(result.error || "Failed to fetch data");
-      }
+      setApplications(response.data);
+      setError("");
     } catch (err) {
-      setError(err.message);
+      if (err.response) {
+        setError(err.response.data.error || "Failed to load applications");
+      } else {
+        setError("Network error");
+      }
     }
   };
 
@@ -37,7 +38,7 @@ export default function MyApplications() {
 
   return (
     <div className="container py-5">
-      <h2 className="fw-bold mb-4 text-center">All Applications Status</h2>
+      <h2 className="fw-bold mb-4 text-center">My Applications Status</h2>
 
       {error && <p className="text-danger text-center">{error}</p>}
 
@@ -45,7 +46,7 @@ export default function MyApplications() {
         <div className="row">
           {applications.map((app) => (
             <div key={app.appId} className="col-md-6 mb-4">
-              <div className="card shadow-sm p-3 border-0">
+              <div className="card shadow-sm p-3">
                 <h5 className="fw-bold">{app.fullName}</h5>
                 <p><strong>Email:</strong> {app.email}</p>
                 <p><strong>Phone:</strong> {app.phoneNumber}</p>
@@ -54,36 +55,32 @@ export default function MyApplications() {
 
                 <p>
                   <strong>Document Status: </strong>
-                  <span
-                    className={
-                      app.documentVerificationStatus === "APPROVED"
-                        ? "text-success fw-bold"
-                        : app.documentVerificationStatus === "REJECTED"
-                        ? "text-danger fw-bold"
-                        : "text-warning fw-bold"
-                    }
-                  >
+                  <span className={
+                    app.documentVerificationStatus === "APPROVED"
+                      ? "text-success fw-bold"
+                      : app.documentVerificationStatus === "REJECTED"
+                      ? "text-danger fw-bold"
+                      : "text-warning fw-bold"
+                  }>
                     {app.documentVerificationStatus}
                   </span>
                 </p>
 
                 <p>
                   <strong>Offer Status: </strong>
-                  <span
-                    className={
-                      app.offerStatus === "APPROVED"
-                        ? "text-success fw-bold"
-                        : app.offerStatus === "REJECTED"
-                        ? "text-danger fw-bold"
-                        : "text-warning fw-bold"
-                    }
-                  >
+                  <span className={
+                    app.offerStatus === "APPROVED"
+                      ? "text-success fw-bold"
+                      : app.offerStatus === "REJECTED"
+                      ? "text-danger fw-bold"
+                      : "text-warning fw-bold"
+                  }>
                     {app.offerStatus}
                   </span>
                 </p>
 
                 <p><strong>Submitted:</strong> {new Date(app.submittedAt).toLocaleString()}</p>
-                <p><strong>Last Updated:</strong> {new Date(app.updatedAt).toLocaleString()}</p>
+                <p><strong>Updated:</strong> {new Date(app.updatedAt).toLocaleString()}</p>
               </div>
             </div>
           ))}
@@ -94,6 +91,7 @@ export default function MyApplications() {
     </div>
   );
 }
+
 
 
 
