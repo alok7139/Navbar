@@ -129,75 +129,80 @@ export default function MyApplications() {
             const cardNumberGrouped = formatCardNumberGrouped(cardNumberFull);
             const cardNumberMasked = maskCard(cardNumberFull);
 
-            return (
-              <div className="card-flip-container" key={app.appId}>
-                <div className={`credit-card ${cardThemeClass(app.cardType || "SILVER")}`}>
-                  {/* FRONT */}
-                  <div className="card-face card-front">
-                    <div className="card-top-row">
-                      <div className="card-chip" />
-                      <div className={`offer-badge ${statusBadgeClass(app.offerStatus)}`}>
-                        {app.offerStatus || "PENDING"}
-                      </div>
-                    </div>
+           return (
+  <div className="card-flip-container" key={app.appId}>
+    <div className="card-inner">
 
-                    <div className="card-body-front">
-                      <div className="card-number-line">{cardNumberMasked}</div>
+      {/* FRONT */}
+      <div className={`credit-card card-front ${cardThemeClass(app.cardType || "SILVER")}`}>
+        <div className="card-top-row">
+          <div className="card-chip" />
+          <div className={`offer-badge ${statusBadgeClass(app.offerStatus)}`}>
+            {app.offerStatus || "PENDING"}
+          </div>
+        </div>
 
-                      <div className="card-meta-row">
-                        <div className="card-holder">
-                          <label>Card Holder</label>
-                          <div>{app.fullName || "—"}</div>
-                        </div>
+        <div className="card-body-front">
+          <div className="card-number-line">{cardNumberMasked}</div>
 
-                        <div className="card-expiry">
-                          <label>Expiry</label>
-                          <div>{expiryMonth}/{expiryYear}</div>
-                        </div>
-                      </div>
+          <div className="card-meta-row">
+            <div className="card-holder">
+              <label>Card Holder</label>
+              <div>{app.fullName || "—"}</div>
+            </div>
 
-                      <div className="card-type-label">{app.cardType} CARD</div>
-                    </div>
+            <div className="card-expiry">
+              <label>Expiry</label>
+              <div>{expiryMonth}/{expiryYear}</div>
+            </div>
+          </div>
 
-                    <div className="card-footer-front">
-                      <small>App ID: {app.appId?.slice(0, 8)}</small>
-                      <small className="submitted-on">Submitted: {app.submittedAt ? new Date(app.submittedAt).toLocaleDateString() : "—"}</small>
-                    </div>
-                  </div>
+          <div className="card-type-label">{app.cardType} CARD</div>
+        </div>
 
-                  {/* BACK */}
-                  <div className="card-face card-back">
-                    <div className="magnetic-strip" />
-                    <div className="back-body">
-                      <div className="back-line">
-                        <label>Card Number</label>
-                        <div className="mono">{cardNumberGrouped}</div>
-                      </div>
+        <div className="card-footer-front">
+          <small>App ID: {app.appId?.slice(0, 8)}</small>
+          <small className="submitted-on">
+            Submitted: {app.submittedAt ? new Date(app.submittedAt).toLocaleDateString() : "—"}
+          </small>
+        </div>
+      </div>
 
-                      <div className="back-row">
-                        <div className="back-cvv">
-                          <label>CVV</label>
-                          <div className="mono cvv-box">{cvv}</div>
-                        </div>
+      {/* BACK */}
+      <div className={`credit-card card-back ${cardThemeClass(app.cardType || "SILVER")}`}>
+        <div className="magnetic-strip" />
+        <div className="back-body">
+          <div className="back-line">
+            <label>Card Number</label>
+            <div className="mono">{cardNumberGrouped}</div>
+          </div>
 
-                        <div className="back-info">
-                          <label>Document Status</label>
-                          <div className="mono">{app.documentVerificationStatus || "PENDING"}</div>
-                          <label style={{ marginTop: 8 }}>Offer Status</label>
-                          <div className="mono">{app.offerStatus || "PENDING"}</div>
-                        </div>
-                      </div>
+          <div className="back-row">
+            <div className="back-cvv">
+              <label>CVV</label>
+              <div className="mono cvv-box">{cvv}</div>
+            </div>
 
-                      <div className="back-footer">
-                        <small>Issued by YourBank</small>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                {/* Hint text */}
-                <div className="flip-hint">Hover or tap to flip</div>
-              </div>
-            );
+            <div className="back-info">
+              <label>Document Status</label>
+              <div className="mono">{app.documentVerificationStatus || "PENDING"}</div>
+              <label style={{ marginTop: 8 }}>Offer Status</label>
+              <div className="mono">{app.offerStatus || "PENDING"}</div>
+            </div>
+          </div>
+
+          <div className="back-footer">
+            <small>Issued by YourBank</small>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div className="flip-hint">Hover or tap to flip</div>
+  </div>
+);
+
           })}
         </div>
       )}
@@ -238,23 +243,30 @@ export default function MyApplications() {
 
 /* flip container */
 .card-flip-container {
-  perspective: 1200px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  width: 330px;
+  height: 200px;
+  perspective: 1000px;
+  position: relative;
+}
+
+.card-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.9s ease-in-out;
 }
 
 /* card (both faces) */
 .credit-card {
   width: 100%;
-  max-width: 360px;
-  height: 210px;
-  border-radius: 16px;
-  position: relative;
-  transform-style: preserve-3d;
-  transition: transform 0.6s cubic-bezier(.2,.9,.3,1), box-shadow .25s;
-  box-shadow: 0 10px 30px rgba(2,6,23,0.12);
-  cursor: pointer;
+  height: 100%;
+  padding: 18px;
+  border-radius: 14px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  backface-visibility: hidden;
 }
 
 /* hover flip for desktop */
@@ -291,7 +303,6 @@ export default function MyApplications() {
 /* back */
 .card-back {
   transform: rotateY(180deg);
-  z-index: 1;
 }
 
 /* chip and top row */
