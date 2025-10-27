@@ -1,0 +1,212 @@
+const Dashboard = () => {
+  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [dateRange, setDateRange] = useState('all');
+  const [cardTypeFilter, setCardTypeFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+
+  const filteredApplications = useMemo(() => {
+    return initialApplications.filter(app => {
+      const matchesCardType = cardTypeFilter === 'all' || app.cardType === cardTypeFilter;
+      const matchesStatus = statusFilter === 'all' || app.status === statusFilter;
+      
+      let matchesDate = true;
+      if (dateRange !== 'all') {
+        const appDate = new Date(app.date);
+        const today = new Date('2025-10-13');
+        
+        if (dateRange === 'last7days') {
+          const last7Days = new Date(today);
+          last7Days.setDate(today.getDate() - 7);
+          matchesDate = appDate >= last7Days;
+        } else if (dateRange === 'last30days') {
+          const last30Days = new Date(today);
+          last30Days.setDate(today.getDate() - 30);
+          matchesDate = appDate >= last30Days;
+        } else if (dateRange === 'thisMonth') {
+          matchesDate = appDate.getMonth() === today.getMonth();
+        }
+      }
+      
+      return matchesCardType && matchesStatus && matchesDate;
+    });
+  }, [dateRange, cardTypeFilter, statusFilter]);
+
+  const stats = useMemo(() => {
+    const total = filteredApplications.length;
+    const approved = filteredApplications.filter(app => app.status === 'Approved').length;
+    const pending = filteredApplications.filter(app => app.status === 'Pending').length;
+    const rejected = filteredApplications.filter(app => app.status === 'Rejected').length;
+    
+    return { total, approved, pending, rejected };
+  }, [filteredApplications]);
+
+  const reportData = useMemo(() => {
+    const cardTypes = ['Platinum', 'Gold', 'Silver', 'Bronze'];
+    return cardTypes.map(type => {
+      const typeApps = filteredApplications.filter(app => app.cardType === type);
+      const approved = typeApps.filter(app => app.status === 'Approved').length;
+      const total = typeApps.length;
+      const percentage = total > 0 ? ((approved / total) * 100).toFixed(1) : 0;
+      
+      return { cardType: type, total, approved, percentage };
+    });
+  }, [filteredApplications]);
+
+  const resetFilters = () => {
+    setDateRange('all');
+    setCardTypeFilter('all');
+    setStatusFilter('all');
+  };
+
+  if (currentPage === 'status') {
+    return <StatusPage applications={filteredApplications} onBack={() => setCurrentPage('dashboard')} />;
+  }
+
+  if (currentPage === 'report') {
+    return <ReportPage reportData={reportData} stats={stats} onBack={() => setCurrentPage('dashboard')} />;
+  }
+
+  return (
+    <>
+   
+      <div className="min-vh-100" style={{  padding: '20px' }}>
+        <div className="container-fluid">
+          <div className="card shadow-sm" style={{  }}>
+            <div className="card-body" style={{  }}>
+              <h1 className="text-center mb-4 fw-bold gradient-text" >Reporting Dashboard</h1>
+              
+              <div className="row g-3 mb-4">
+                <div className="col-12 col-md-3">
+                  <select 
+                    className="form-select" 
+                    value={dateRange}
+                    onChange={(e) => setDateRange(e.target.value)}
+                    style={{ background: 'linear-gradient(to bottom, #007b8f)',color:"white", border: '1px solid #000' }}
+                  >
+                    <option value="" style={{color:"black"}}>Date Range ▼</option>
+                    <option value="last7days" style={{color:"black"}}>Last 7 Days</option>
+                    <option value="last30days" style={{color:"black"}}>Last 30 Days</option>
+                    <option value="thisMonth" style={{color:"black"}}>This Month</option>
+                  </select>
+                </div>
+                
+                <div className="col-12 col-md-3">
+                  <select 
+                    className="form-select"
+                    value={cardTypeFilter}
+                    onChange={(e) => setCardTypeFilter(e.target.value)}
+                    style={{ background: 'linear-gradient(to bottom, #007b8f)',color:"white", border: '1px solid #000' }}
+                  >
+                    <option value="" style={{color:"black"}}>Card Type ▼</option>
+                    <option value="Platinum" style={{color:"black"}}>Platinum</option>
+                    <option value="Gold" style={{color:"black"}}>Gold</option>
+                    <option value="Silver" style={{color:"black"}}>Silver</option>
+                    <option value="Bronze" style={{color:"black"}}>Bronze</option>
+                  </select>
+                </div>
+                
+                <div className="col-12 col-md-3">
+                  <button 
+                    className="btn w-100"
+                    onClick={() => setCurrentPage('status')}
+                    style={{ background: 'linear-gradient(to bottom, #007b8f)',color:"white", border: '1px solid #000' }}
+                  >
+                    Status
+                  </button>
+                </div>
+                
+                <div className="col-12 col-md-3">
+                  <button 
+                    className="btn w-100"
+                    onClick={() => setCurrentPage('report')}
+                    style={{ background: 'linear-gradient(to bottom, #007b8f)',color:"white", border: '1px solid #000' }}
+                  >
+                    Generate Report
+                  </button>
+                </div>
+              </div>
+
+              <div className="row mb-4">
+                <div className="col-12">
+                  <div className="card" style={{ backgroundColor: '', border: '1px solid #000' }}>
+                    <div className="card-body">
+                      <div className="row text-center">
+                        <div className="col-6 col-md-3 mb-3">
+                          <h6 className="mb-2">Total Applications</h6>
+                          <h2 className="fw-bold">{stats.total}</h2>
+                        </div>
+                        <div className="col-6 col-md-3 mb-3">
+                          <h6 className="mb-2">Approved</h6>
+                          <h2 className="fw-bold">{stats.approved}</h2>
+                        </div>
+                        <div className="col-6 col-md-3">
+                          <h6 className="mb-2">Pending</h6>
+                          <h2 className="fw-bold">{stats.pending}</h2>
+                        </div>
+                        <div className="col-6 col-md-3">
+                          <h6 className="mb-2">Rejected</h6>
+                          <h2 className="fw-bold">{stats.rejected}</h2>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="row mb-4">
+                <div className="col-12">
+                  <div className="card text-center" style={{ backgroundColor: '', border: '1px solid #000' }}>
+                    <div className="card-body py-4">
+                      <p className="mb-3 fs-5">
+                        As a Banking Organisation that keeps customers first, we are proud to have 
+                        achieved a Customer Satisfaction Rate of
+                      </p>
+                      <h1 className="display-3 fw-bold">97%</h1>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="row" >
+                <div className="col-12">
+                  <div className="table-responsive" >
+                    <table className="table align-middle table-hover" style={{ backgroundColor: '#dbd8e3' }}>
+                      <thead style={{ backgroundColor: '#dbd8e3' }}>
+                        <tr>
+                          <th>Application ID</th>
+                          <th>Applicant Name</th>
+                          <th>Card Type</th>
+                          <th>Status</th>
+                          <th>Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredApplications.slice(0, 5).map((app) => (
+                          <tr key={app.id}>
+                            <td>{app.id}</td>
+                            <td>{app.name}</td>
+                            <td>{app.cardType}</td>
+                            <td>{app.status}</td>
+                            <td>{new Date(app.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              {(dateRange !== 'all' || cardTypeFilter !== 'all' || statusFilter !== 'all') && (
+                <div className="text-center mt-3">
+                  <button className="btn btn-primary" onClick={resetFilters}>
+                    Reset Filters
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
