@@ -1,4 +1,156 @@
 import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "./Onboarding.css";
+import "./Documents.css";
+
+const API_BASE = "http://localhost:8080";
+
+const Onboarding = () => {
+    const [selectedRow, setSelectedRow] = useState(null);
+    const [data, setData] = useState([]);
+    const [searchTerm, setSearchTerm] = useState("");
+    const navigate = useNavigate();
+
+    const shortId = (id) => id ? id.slice(0, 8) + "..." : "";
+
+    const handleEdit = () => {
+        if (!selectedRow) return;
+        navigate(`/edit/${selectedRow.appId}`, { state: { row: selectedRow } });
+    };
+
+    // ✅ Fetch Data From Backend
+    const fetchAllApplications = async () => {
+        try {
+            const token = localStorage.getItem("token"); // take from local storage or context
+            const response = await axios.get(`${API_BASE}/api/onboarding/all`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            console.log("API data:", response.data);
+            setData(response.data || []);
+        } catch (error) {
+            console.error("Error fetching applications:", error.response?.data || error.message);
+        }
+    };
+
+    useEffect(() => {
+        fetchAllApplications();
+    }, []);
+
+    const filteredData = data.filter((item) => {
+        const query = searchTerm.toLowerCase();
+        return (
+            item.fullName.toLowerCase().includes(query) ||
+            item.appId.toLowerCase().includes(query) ||
+            item.status.toLowerCase().includes(query)
+        );
+    });
+
+    return (
+        <div className='container-fluid onboarding-container py-4'>
+            <h2 className='text-center mb-4 onboarding-heading'>
+                Welcome back, <span style={{ color: '#007b8f' }} className='fw-semibold'>User!</span>
+            </h2>
+
+            {/* ✅ Search */}
+            <div className="row justify-content-center mb-3">
+                <div className='col-12 col-md-6'>
+                    <input
+                        type='text'
+                        placeholder='Search by name, status, or ID'
+                        className='form-control w-50 mx-auto'
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+            </div>
+
+            <div className='table-responsive'>
+                <table className='table align-middle table-hover'>
+                    <thead className="table-light">
+                        <tr>
+                            <th>Select</th>
+                            <th>Sl. No.</th>
+                            <th>Application ID</th>
+                            <th>Card Holder Name</th>
+                            <th>Status</th>
+                            <th>Email</th>
+                            <th>Contact</th>
+                            <th>Card Type</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {filteredData.length > 0 ? (
+                            filteredData.map((row, index) => (
+                                <tr key={row.appId}>
+                                    <td>
+                                        <input
+                                            type="radio"
+                                            name="selectedRow"
+                                            onChange={() => setSelectedRow(row)}
+                                            checked={selectedRow?.appId === row.appId}
+                                        />
+                                    </td>
+                                    <td>{index + 1}</td>
+                                    <td title={row.appId}>{shortId(row.appId)}</td>
+                                    <td>{row.fullName}</td>
+                                    <td className={
+                                        row.status === "APPROVED" ? "text-success fw-bold" :
+                                            row.status === "REJECTED" ? "text-danger fw-bold" :
+                                                "text-warning fw-bold"
+                                    }>
+                                        {row.status.replace("_", " ")}
+                                    </td>
+                                    <td>
+                                        <a href={`mailto:${row.email}`} className='text-decoration-none text-primary'>
+                                            {row.email}
+                                        </a>
+                                    </td>
+                                    <td>{row.phoneNumber}</td>
+                                    <td>{row.cardType}</td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="8" className="text-center text-muted py-3">
+                                    No results found.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            <div className='d-flex flex-wrap justify-content-center gap-3 mt-4'>
+                <button onClick={handleEdit} className="btn btn-custom-green" style={{ color: "white" }}>
+                    Edit Form
+                </button>
+
+                <Link to="/add/newuser/details">
+                    <button className="btn btn-custom-blue" style={{ color: "white" }}>
+                        Create New
+                    </button>
+                </Link>
+            </div>
+        </div>
+    );
+};
+
+export default Onboarding;
+
+
+
+
+
+
+
+
+
+
+import React, { useEffect, useState } from 'react';
 import { Link ,useNavigate} from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Onboarding.css";
