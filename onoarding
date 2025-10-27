@@ -1,0 +1,160 @@
+import React, { useEffect, useState } from 'react';
+import { Link ,useNavigate} from "react-router-dom";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "./Onboarding.css";
+import "./Documents.css";
+
+
+
+const Onboarding = () => {
+    const [selectedrow, setselectedrow] = useState(null);
+    const navigate = useNavigate();
+
+    const handleedit = () => {
+        if(!selectedrow)return;
+        navigate(`/edit/${selectedrow.id} `, {state:{row:selectedrow}});
+    }
+
+    const [loaded, setLoaded] = useState(false);
+    useEffect(() => {
+        setLoaded(true);
+    }, []);
+
+
+
+
+    const username = "UserName";
+    const [data] = useState([
+        {id: 1, applicationId: "APP123", name: "John Doe", status: "Pending", email: "john.doe@example.com", contact: "9898989898", product: "Gold"},
+        {id: 2, applicationId: "APP124", name: "Jane Doe", status: "Approved", email: "jane.doe@example.com",contact: "7272727272", product: "Silver"},
+        {id: 3, applicationId: "APP125", name: "Bill Smith", status: "Pending", email: "bill.smith@example.com", contact: "6565656565", product: "Platinum"},
+        {id: 4, applicationId: "APP126", name: "Alice Ray", status: "Approved", email: "alice.ray@example.com", contact: "9292929292", product: "Gold"},
+        {id: 5, applicationId: "APP127", name: "David Brown", status: "Rejected", email: "david@example.com", contact: "8989898989", product: "Silver"},
+        {id: 6, applicationId: "APP128", name: "June Davis", status: "Approved", email: "june@example.com",contact: "8181818181",  product: "Platinum"},
+        {id: 7, applicationId: "APP129", name: "Alex Brown", status: "Pending", email: "alex@example.com",contact: "9595959595", product: "Silver"},
+        {id: 8, applicationId: "APP130", name: "James Anderson", status: "Approved", email: "james@example.com",contact: "9797979797", product: "Platinum"},
+    ]);
+    // filtering state
+    const [searchTerm, setSearchTerm] = useState("");
+    const filteredData = data.filter((item) => {
+        // const term = searchTerm.trim().toLowerCase();
+        const query = searchTerm.toLowerCase();
+        return (
+            item.name.toLowerCase().includes(query) ||
+            item.applicationId.toLowerCase().includes(query) ||
+            item.status.toLowerCase().includes(query)
+        );
+    }
+        
+
+    );
+ 
+
+    return (
+        <div className='container-fluid onboarding-container py-4'>
+        {/* <div className={`container-fluid dashboard-container py-4 ${loaded ? "fade-in" : ""}`}> */}
+            {/* <h2 className='mb-4'>
+                Welcome Back, <span className='text-primary fw-semibold'>{username}!</span>
+            </h2> */}
+            <h2 className='text-center mb-4 onboarding-heading'>
+                Welcome back, <span style={{ color: '#007b8f' }} className='fw-semifold'>{username}!</span>
+                {/* Welcome back, <span style={{ color: '#0473EA' }} className='fw-semifold'>{username}!</span> */}
+            </h2>
+
+            
+
+            {/* filter */}
+            <div className="row justify-content-center mb-3">
+                <div className='col-12 col-md-6'>
+                <input type='text' placeholder='Search by name, status, or ID' 
+                className='form-control w-50 mx-auto'
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                
+                />
+                </div>
+
+            </div>
+         
+
+         <div className='table-responsive'>
+            <table className='table align-middle table-hover'>
+                <thead className="table-light">
+                    <tr>
+                        <th>Select</th>
+                        <th>Sl. No.</th>
+                        <th>Application ID</th>
+                        <th>Card Holder Name</th>
+                        <th>Status</th>
+                        <th>Email</th>
+                        <th>Contact</th>
+                        <th>Card Type</th> 
+                        {/* <th>Action</th> */}
+                        
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    {filteredData.length > 0 ? (
+                        filteredData.map((row, index) => (
+                            <tr key={row.id}>
+                                {/* <td><input type="checkbox" /></td> */}
+                                <td>
+                                    <input
+                                    type="radio"
+                                    name="selectedRow"
+                                    value={row.id}
+                                    onChange={() => setselectedrow(row)}
+                                    checked = {selectedrow?.id === row.id}
+                                    />
+                                </td>
+                                <td>{index + 1}</td>
+                                <td>{row.applicationId}</td>
+                                <td>{row.name}</td>
+                                <td 
+                                className={
+                                    row.status === "Approved"
+                                    ? "text-success fw-bold"
+                                    : row.status === "Rejected"
+                                    ? "text-danger fw-bold"
+                                    : "text-warning fw-bold"
+                                }
+                                > 
+                                {row.status}
+                                </td>
+                                <td>
+                                    <a href={`mailto:${row.email}`} className='text-decoration-none text-primary'>
+                                        {row.email}
+                                    </a>
+                                </td>
+                                <td>{row.contact}</td>
+                                <td>{row.product}</td>
+                            </tr>
+                        )) 
+                    ) : (
+                        <tr>
+                            <td colSpan="8" className="text-center text-muted py-3">
+                                No results found.
+                            </td>
+                        </tr>
+                    )
+                }
+                </tbody>
+            </table>
+            </div>
+
+            <div className='d-flex flex-wrap justify-content-center gap-3 mt-4'>
+            {/* <Link  onClick={handleedit} className="btn btn-custom-green">View / Edit Form</Link> */}
+            <button onClick={handleedit} className="btn btn-custom-green " style={{color:"white"}}>Edit Form</button>
+            <Link to="/add/newuser/details" ><button className="btn btn-custom-blue" style={{color:"white"}}>Create New</button></Link>
+            {/* <button className="btn btn-custom-gray">Download Report</button> */}
+            
+            
+
+            
+            </div>
+        </div>
+    );
+};
+
+export default Onboarding;
