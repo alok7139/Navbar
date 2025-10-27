@@ -1,0 +1,285 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './UserStatus.css';
+ 
+const UserStatus = () => {
+  const navigate = useNavigate();
+  const [applicationData, setApplicationData] = useState(null);
+  const [currentStage, setCurrentStage] = useState(0);
+  const [rejectionInfo, setRejectionInfo] = useState(null);
+  const [canEdit, setCanEdit] = useState(false);
+ 
+  useEffect(() => {
+    loadApplicationStatus();
+  }, []);
+ 
+  const loadApplicationStatus = () => {
+    const saved = localStorage.getItem('creditCardApplication');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      setApplicationData(parsed);
+     
+      if (parsed.status === 'rejected') {
+        setRejectionInfo({
+          stage: 2,
+          reason: parsed.rejectionReason || 'Document verification failed'
+        });
+        setCurrentStage(2);
+        setCanEdit(true);
+      } else if (parsed.status === 'in-process') {
+        setCurrentStage(2);
+        setCanEdit(true);
+        setRejectionInfo(null);
+      } else if (parsed.status === 'approved') {
+        setCurrentStage(3);
+        setCanEdit(false);
+        setRejectionInfo(null);
+      }
+    }
+  };
+ 
+  const stages = [
+    {
+      id: 1,
+      title: 'Application Submitted',
+      description: 'Your application has been received successfully'
+    },
+    {
+      id: 2,
+      title: 'Document Verification',
+      description: 'All documents are being verified'
+    },
+    {
+      id: 3,
+      title: 'Offer Confirmation',
+      description: 'Your credit card has been approved'
+    }
+  ];
+ 
+  const handleEditApplication = () => {
+    if (!canEdit) {
+      return;
+    }
+ 
+    navigate('/apply', {
+      state: {
+        editApplication: applicationData
+      }
+    });
+  };
+ 
+  const handleNewApplication = () => {
+    localStorage.removeItem('creditCardApplication');
+   
+    navigate('/application');
+  };
+ 
+  if (!applicationData) {
+    return (
+      <div className="status-container">
+        <div className="status-header">
+          <h1 className="status-title" style={{backgroundImage:"linear-gradient(to bottom, #007b8f, #00434e)" , WebkitBackgroundClip:"text" , backgroundClip:"text" , color:"transparent" , WebkitTextFillColor:"transparent"}}>Application Status</h1>
+          <p className="status-subtitle">Track your credit card application progress</p>
+        </div>
+        <div className="empty-state">
+          <div className="empty-icon">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#d4d4d4" strokeWidth="1.5">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <h2 className="empty-title">No Current Application</h2>
+          <p className="empty-description">
+            You don't have any active credit card application.
+            Please submit your application to track its status.
+          </p>
+          <button className="apply-now-btn" onClick={() => navigate('/apply')}>
+            Apply Now
+          </button>
+        </div>
+      </div>
+    );
+  }
+ 
+  return (
+    <div className="status-container">
+      <div className="status-header">
+        <h1 className="status-title" style={{backgroundImage:"linear-gradient(to bottom, #007b8f, #00434e)" , WebkitBackgroundClip:"text" , backgroundClip:"text" , color:"transparent" , WebkitTextFillColor:"transparent"}}>Application Status</h1>
+        <p className="status-subtitle">Track your credit card application progress</p>
+      </div>
+ 
+      <div className="status-card">
+        <div className="progress-timeline">
+          {stages.map((stage, index) => {
+            const isCompleted = currentStage > stage.id;
+            const isCurrent = currentStage === stage.id;
+            const isRejected = rejectionInfo && rejectionInfo.stage === stage.id;
+ 
+            return (
+              <React.Fragment key={stage.id}>
+                <div className="progress-step">
+                  <div className={`progress-circle ${
+                    isRejected ? 'rejected' :
+                    isCompleted ? 'completed' :
+                    isCurrent ? 'current' : 'pending'
+                  }`}>
+                    {isRejected ? (
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    ) : isCompleted ? (
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    ) : (
+                      <span className="progress-number">{stage.id}</span>
+                    )}
+                  </div>
+                  <div className="progress-label">
+                    <h4 className={`progress-title ${
+                      isRejected ? 'rejected-text' :
+                      (isCompleted || isCurrent) ? 'active' : ''
+                    }`}>
+                      {stage.title}
+                    </h4>
+                    <p className={`progress-desc ${
+                      isRejected ? 'rejected-text' :
+                      (isCompleted || isCurrent) ? 'active' : ''
+                    }`}>
+                      {isRejected ? 'Verification Failed' : stage.description}
+                    </p>
+                  </div>
+                </div>
+               
+                {index < stages.length - 1 && (
+                  <div className={`progress-line ${
+                    isRejected ? 'rejected' :
+                    currentStage > stage.id ? 'completed' : 'pending'
+                  }`}></div>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+ 
+        {currentStage === 2 && !rejectionInfo && (
+          <div className="edit-section">
+            <div className="edit-info-box">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <div className="edit-info-content">
+                <h4 className="edit-info-title">Document Verification in Progress</h4>
+                <p className="edit-info-text">
+                  Your documents are currently being verified. If you need to update any information, you can edit your application.
+                </p>
+              </div>
+            </div>
+            <button className="edit-stage-btn" onClick={handleEditApplication}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+              Edit Application
+            </button>
+          </div>
+        )}
+ 
+        {rejectionInfo && (
+          <div className="rejection-alert">
+            <div className="rejection-icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </div>
+            <div className="rejection-content">
+              <h3 className="rejection-title">Application Rejected</h3>
+              <p className="rejection-stage">
+                Rejected at: <strong>{stages[rejectionInfo.stage - 1]?.title}</strong>
+              </p>
+              <div className="rejection-reason">
+                <strong>Reason:</strong> {rejectionInfo.reason}
+              </div>
+              <button className="edit-application-btn" onClick={handleEditApplication}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Edit & Resubmit Application
+              </button>
+            </div>
+          </div>
+        )}
+ 
+        <div className="applicant-info">
+          <h3 className="info-section-title" style={{backgroundImage:"linear-gradient(to bottom, #007b8f, #00434e)" , WebkitBackgroundClip:"text" , backgroundClip:"text" , color:"transparent" , WebkitTextFillColor:"transparent"}}>Application Details</h3>
+          <div className="info-grid">
+            <div className="info-item">
+              <span className="info-label">Applicant Name</span>
+              <span className="info-value">
+                {applicationData.firstName} {applicationData.lastName}
+              </span>
+            </div>
+            <div className="info-item">
+              <span className="info-label">Application ID</span>
+              <span className="info-value">
+                #{applicationData.id.slice(0, 10)}
+              </span>
+            </div>
+            <div className="info-item">
+              <span className="info-label">Email Address</span>
+              <span className="info-value">{applicationData.email}</span>
+            </div>
+            <div className="info-item">
+              <span className="info-label">Contact Number</span>
+              <span className="info-value">{applicationData.contactNumber}</span>
+            </div>
+            <div className="info-item">
+              <span className="info-label">Card Type</span>
+              <span className="info-badge">{applicationData.cardType}</span>
+            </div>
+            <div className="info-item">
+              <span className="info-label">Submitted On</span>
+              <span className="info-value">
+                {new Date(applicationData.submittedAt).toLocaleDateString('en-IN', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric'
+                })}
+              </span>
+            </div>
+          </div>
+        </div>
+ 
+        {currentStage === 3 && !rejectionInfo && (
+          <div className="success-banner">
+            <div className="success-icon-wrapper">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+            </div>
+            <div className="success-content">
+              <h3 className="success-title">🎉 Congratulations! Your Application is Approved</h3>
+              <p className="success-text">
+                Your credit card has been approved and will be delivered to your registered address within 5-7 business days.
+              </p>
+              <button className="new-application-button" onClick={handleNewApplication}>
+                Apply for New Card
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+ 
+export default UserStatus;
+ 
