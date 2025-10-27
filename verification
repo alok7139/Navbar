@@ -525,55 +525,10 @@ export default VerificationDetails;
 
 
 
-const handlePreview = async (appId, docType) => {
-  const token = localStorage.getItem("token");
-
-  if (!token) {
-    alert("Please login first!");
-    return;
-  }
-
-  try {
-    const response = await axios.get(
-      `${API_BASE}/api/application/${appId}/download/${docType}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        responseType: "blob", // IMPORTANT ✅
-      }
-    );
-
-    const blob = new Blob([response.data], { type: "application/pdf" });
-    const fileURL = URL.createObjectURL(blob);
-
-    window.open(fileURL, "_blank");
-
-    // Auto cleanup if user closes the tab
-    const check = setInterval(() => {
-      if (window.closed) {
-        clearInterval(check);
-        URL.revokeObjectURL(fileURL);
-      }
-    }, 1000);
-
-  } catch (error) {
-    console.error(error);
-    alert("Error loading document!");
-  }
-};
-
-
-
-
-import axios from "axios";
-import { API_BASE } from "../config";
-
-export const handleDownload = async ({
+export const handlePreview = async ({
   appId,
   docType,
-  filename,
-  setLoading,
+  setLoading
 }) => {
   try {
     const token = localStorage.getItem("authToken");
@@ -588,28 +543,29 @@ export const handleDownload = async ({
       `${API_BASE}/api/application/${appId}/download/${docType}`,
       {
         responseType: "blob",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }
       }
     );
 
-    const blob = new Blob([response.data], { type: "application/pdf" });
-    const url = window.URL.createObjectURL(blob);
+    const file = new Blob([response.data], { type: "application/pdf" });
+    const url = window.URL.createObjectURL(file);
 
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename || `${docType}.pdf`;
+    const previewWindow = window.open(url, "_blank");
 
-    document.body.appendChild(a);
-    a.click();
-
-    setTimeout(() => {
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    }, 300);
+    if (previewWindow) {
+      const int = setInterval(() => {
+        if (previewWindow.closed) {
+          clearInterval(int);
+          window.URL.revokeObjectURL(url);
+        }
+      }, 1000);
+    } else {
+      alert("Please allow popups to view PDF");
+    }
 
   } catch (err) {
     console.error(err);
-    alert("Failed to download file!");
+    alert("Failed to preview document!");
   } finally {
     setLoading(false);
   }
