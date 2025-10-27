@@ -1,3 +1,412 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import './UserApplication.css';
+
+const API_BASE = "http://localhost:8080";
+
+export const UserApplication = () => {
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState({
+    fullName: '',
+    dateOfBirth: '',
+    email: '',
+    phoneNumber: '',
+    cardType: '',
+    address: '',
+    userIncome: '',
+    // files will be stored as File objects
+    aadharPdf: null,
+    panPdf: null,
+    incomeProofPdf: null,
+    status: 'IN_PROGRESS'
+  });
+
+  const [uploadingFiles, setUploadingFiles] = useState({
+    aadharPdf: false,
+    panPdf: false,
+    incomeProofPdf: false
+  });
+
+  const [errors, setErrors] = useState({});
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+  };
+
+  const handleFileChange = (e, field) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    // set uploading state for UX
+    setUploadingFiles(prev => ({ ...prev, [field]: true }));
+
+    // slight delay to mimic upload UX; remove setTimeout for real uploads
+    setTimeout(() => {
+      setFormData(prev => ({ ...prev, [field]: file }));
+      setUploadingFiles(prev => ({ ...prev, [field]: false }));
+      // clear related error if any
+      if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
+    }, 700);
+  };
+
+  const validate = () => {
+    const newErrors = {};
+
+    if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
+    if (!formData.dateOfBirth) newErrors.dateOfBirth = 'DOB is required';
+    if (!formData.email.trim()) newErrors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
+    if (!formData.phoneNumber.trim()) newErrors.phoneNumber = 'Phone number is required';
+    else if (!/^\d{10}$/.test(formData.phoneNumber)) newErrors.phoneNumber = 'Phone number must be 10 digits';
+    if (!formData.address.trim()) newErrors.address = 'Address is required';
+    if (!formData.cardType) newErrors.cardType = 'Select card type';
+    if (!formData.aadharPdf) newErrors.aadharPdf = 'Aadhar PDF is required';
+    if (!formData.panPdf) newErrors.panPdf = 'PAN PDF is required';
+    if (!formData.incomeProofPdf) newErrors.incomeProofPdf = 'Income proof PDF is required';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitError(null);
+
+    if (!validate()) {
+      return;
+    }
+
+    // token from localStorage (or other auth store)
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please login first to get a token');
+      return;
+    }
+
+    try {
+      const payload = new FormData();
+      payload.append('fullName', formData.fullName);
+      payload.append('dateOfBirth', formData.dateOfBirth);
+      payload.append('email', formData.email);
+      payload.append('phoneNumber', formData.phoneNumber);
+      payload.append('cardType', formData.cardType);
+      payload.append('address', formData.address);
+      if (formData.userIncome) payload.append('userIncome', formData.userIncome);
+      payload.append('status', formData.status); // IN_PROGRESS
+
+      // append files (server should expect these keys)
+      payload.append('aadharPdf', formData.aadharPdf);
+      payload.append('panPdf', formData.panPdf);
+      payload.append('incomeProofPdf', formData.incomeProofPdf);
+
+      // show uploading state for files while request in progress
+      setUploadingFiles({ aadharPdf: true, panPdf: true, incomeProofPdf: true });
+
+      const response = await axios.post(
+        `${API_BASE}/api/application/submit`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            // DO NOT set Content-Type when sending FormData; axios will set the correct multipart boundary.
+          },
+          timeout: 30000
+        }
+      );
+
+      // success
+      setShowSuccessMessage(true);
+      setUploadingFiles({ aadharPdf: false, panPdf: false, incomeProofPdf: false });
+
+      // optionally reset the form (if you want user to be able to submit again)
+      setFormData({
+        fullName: '',
+        dateOfBirth: '',
+        email: '',
+        phoneNumber: '',
+        cardType: '',
+        address: '',
+        userIncome: '',
+        aadharPdf: null,
+        panPdf: null,
+        incomeProofPdf: null,
+        status: 'IN_PROGRESS'
+      });
+
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+        // navigate to status page where backend status can be shown
+        navigate('/status');
+      }, 1600);
+
+    } catch (err) {
+      setUploadingFiles({ aadharPdf: false, panPdf: false, incomeProofPdf: false });
+      // capture error message
+      const message = err?.response?.data?.message || err.message || 'Submission failed';
+      setSubmitError(message);
+      // show an inline error or toast
+      console.error('Submit error:', err);
+    }
+  };
+
+  // Small helpers for UI display
+  const fileLabel = (file, placeholder) => {
+    if (!file) return (
+      <div className="file-placeholder">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <span>{placeholder}</span>
+      </div>
+    );
+    return (
+      <div className="file-uploaded">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M9 12l2 2 4-4"/>
+          <circle cx="12" cy="12" r="10"/>
+        </svg>
+        <span>{file.name}</span>
+      </div>
+    );
+  };
+
+  return (
+    <div className="application-container">
+      {showSuccessMessage && (
+        <div className="success-toast">
+          <div className="success-toast-content">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M9 12l2 2 4-4"/>
+              <circle cx="12" cy="12" r="10"/>
+            </svg>
+            <span>Application submitted successfully! Redirecting to status page...</span>
+          </div>
+        </div>
+      )}
+
+      {submitError && (
+        <div className="error-banner">
+          <span>{submitError}</span>
+        </div>
+      )}
+
+      <div className="form-header">
+        <h1 className="form-title" style={{ backgroundImage: "linear-gradient(to bottom, #007b8f, #00434e)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", WebkitTextFillColor: "transparent" }}>Credit Card Application</h1>
+        <p className="form-subtitle">Fill in your details to apply for a credit card</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="application-form" encType="multipart/form-data">
+        <div className="form-section">
+          <h3 className="section-title">Personal Information</h3>
+
+          <div className="form-grid">
+            <div className="form-group">
+              <label className="form-label">Full Name *</label>
+              <input
+                type="text"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleInputChange}
+                className={`form-input ${errors.fullName ? 'error' : ''}`}
+                placeholder="John Doe"
+              />
+              {errors.fullName && <span className="error-text">{errors.fullName}</span>}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">DOB *</label>
+              <input
+                type="date"
+                name="dateOfBirth"
+                value={formData.dateOfBirth}
+                onChange={handleInputChange}
+                className={`form-input ${errors.dateOfBirth ? 'error' : ''}`}
+              />
+              {errors.dateOfBirth && <span className="error-text">{errors.dateOfBirth}</span>}
+            </div>
+          </div>
+
+          <div className="form-grid">
+            <div className="form-group">
+              <label className="form-label">Email Address *</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className={`form-input ${errors.email ? 'error' : ''}`}
+                placeholder="john.doe@example.com"
+              />
+              {errors.email && <span className="error-text">{errors.email}</span>}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Contact Number *</label>
+              <input
+                type="tel"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleInputChange}
+                className={`form-input ${errors.phoneNumber ? 'error' : ''}`}
+                placeholder="9876543210"
+                maxLength="10"
+              />
+              {errors.phoneNumber && <span className="error-text">{errors.phoneNumber}</span>}
+            </div>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <h3 className="section-title">Details</h3>
+          <div className="form-grid">
+            <div className="form-group">
+              <label className="form-label">Address *</label>
+              <textarea
+                name="address"
+                value={formData.address}
+                onChange={handleInputChange}
+                className={`form-input ${errors.address ? 'error' : ''}`}
+                placeholder="Enter your complete address"
+                rows="3"
+              />
+              {errors.address && <span className="error-text">{errors.address}</span>}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Card Type *</label>
+              <div className="select-wrapper">
+                <select
+                  name="cardType"
+                  value={formData.cardType}
+                  onChange={handleInputChange}
+                  className={`form-select ${errors.cardType ? 'error' : ''}`}
+                >
+                  <option value="">Select Card Type</option>
+                  <option value="GOLD">Gold Card</option>
+                  <option value="SILVER">Silver Card</option>
+                  <option value="PLATINUM">Platinum Card</option>
+                </select>
+                <svg className="select-arrow" width="12" height="8" viewBox="0 0 12 8" fill="none">
+                  <path d="M1 1L6 6L11 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              {errors.cardType && <span className="error-text">{errors.cardType}</span>}
+            </div>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <h3 className="section-title">Document Upload</h3>
+
+          <div className="form-grid">
+            <div className="form-group">
+              <label className="form-label">Aadhar Card (PDF) *</label>
+              <div className={`file-upload ${errors.aadharPdf ? 'error' : ''}`}>
+                <input
+                  type="file"
+                  id="aadhar"
+                  accept=".pdf"
+                  name="aadharPdf"
+                  onChange={(e) => handleFileChange(e, 'aadharPdf')}
+                  className="file-input"
+                />
+                <label htmlFor="aadhar" className="file-label">
+                  {uploadingFiles.aadharPdf ? (
+                    <div className="upload-loading">
+                      <div className="spinner"></div>
+                      <span>Uploading...</span>
+                    </div>
+                  ) : fileLabel(formData.aadharPdf, 'Upload Aadhar Card')}
+                </label>
+              </div>
+              {errors.aadharPdf && <span className="error-text">{errors.aadharPdf}</span>}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">PAN Card (PDF) *</label>
+              <div className={`file-upload ${errors.panPdf ? 'error' : ''}`}>
+                <input
+                  type="file"
+                  id="pan"
+                  accept=".pdf"
+                  name="panPdf"
+                  onChange={(e) => handleFileChange(e, 'panPdf')}
+                  className="file-input"
+                />
+                <label htmlFor="pan" className="file-label">
+                  {uploadingFiles.panPdf ? (
+                    <div className="upload-loading">
+                      <div className="spinner"></div>
+                      <span>Uploading...</span>
+                    </div>
+                  ) : fileLabel(formData.panPdf, 'Upload PAN Card')}
+                </label>
+              </div>
+              {errors.panPdf && <span className="error-text">{errors.panPdf}</span>}
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Income Tax Proof (PDF) *</label>
+            <div className={`file-upload ${errors.incomeProofPdf ? 'error' : ''}`}>
+              <input
+                type="file"
+                id="incomeTax"
+                accept=".pdf"
+                name="incomeProofPdf"
+                onChange={(e) => handleFileChange(e, 'incomeProofPdf')}
+                className="file-input"
+              />
+              <label htmlFor="incomeTax" className="file-label">
+                {uploadingFiles.incomeProofPdf ? (
+                  <div className="upload-loading">
+                    <div className="spinner"></div>
+                    <span>Uploading...</span>
+                  </div>
+                ) : fileLabel(formData.incomeProofPdf, 'Upload Income Tax Proof')}
+              </label>
+            </div>
+            {errors.incomeProofPdf && <span className="error-text">{errors.incomeProofPdf}</span>}
+          </div>
+        </div>
+
+        <div className="form-actions">
+          <button type="submit" className="submit-button">
+            <span>Submit Application</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default UserApplication;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './UserApplication.css';
