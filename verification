@@ -562,3 +562,52 @@ const handlePreview = async (appId, docType) => {
     alert("Error loading document!");
   }
 };
+
+
+
+
+async function downloadDocument(appId, docType, filename) {
+            const token = document.getElementById('authToken').value;
+            if (!token) {
+                alert('Please login first to get a token');
+                return;
+            }
+
+            try {
+                const button = event.target;
+                const originalText = button.innerHTML;
+                button.innerHTML = '⏳ Downloading...';
+                button.disabled = true;
+
+                const response = await fetch(`${API_BASE}/api/application/${appId}/download/${docType}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename || `${docType}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+
+                    setTimeout(() => {
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    }, 100);
+
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                } else {
+                    const result = await response.json();
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                    alert('Error: ' + (result.error || 'Failed to download document'));
+                }
+            } catch (error) {
+                event.target.innerHTML = '📥 Download';
+                event.target.disabled = false;
+                alert('Error downloading document: ' + error.message);
+            }
+        }
