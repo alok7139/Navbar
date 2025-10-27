@@ -1,0 +1,192 @@
+import {React, useEffect, useState} from "react"
+import './EditApplication.css';
+import {useNavigate,useLocation, useParams , Link} from 'react-router-dom';
+// import userData from './UserData.json';
+
+
+
+function EditApplication(){
+    const navigate=useNavigate();
+    const {id}=useParams();
+
+    const [formData,setFormData]=useState(
+        {
+            fullName: "",
+            dateOfBirth: "",
+            phoneNumber: "",
+            email: "",
+            address: "",
+            cardType: "",
+            aadharPdf: null,
+            panPdf: null,
+            incomeProofPdf: null,
+        }
+    );
+
+    
+
+    const [errors,setErrors]=useState({});
+    // useEffect(()=>{
+    //     const user=userData.users.find((u)=>u.id===id);
+    //     if(user) setFormData(user);
+    // },[id])
+    const handleInputChange=(e)=>{
+        setFormData({...formData,[e.target.name]:e.target.value});
+    }
+    const handleFileChange=(e,fieldName)=>{
+        const file=e.target.files[0];
+        if(file){
+            const allowedTypes=['application/pdf','image/png','image/jpeg'];
+            if(!allowedTypes.includes(file.type)){
+                setErrors({...errors,[fieldName]:'only pdf, png or jpeg files are allowed'});
+                return;
+            }
+            setErrors({...errors,[fieldName]:''});
+            setFormData({...formData,[fieldName]:file});
+        }
+    }
+    const validateForm=()=>{
+        const newErrors={};
+        if(!formData.fullName.trim()){
+            newErrors.fullName="full name requred";
+        }
+        if(!formData.phoneNumber.trim()){
+            newErrors.phoneNumber="phone number required";
+        }
+        if(!formData.email.trim()){
+            newErrors.email="email required";
+        }
+        if(!/^[0-9]{10}$/.test(formData.phoneNumber)){
+            newErrors.phoneNumber="enter correct phone number";
+        }
+        if(!formData.address){
+            newErrors.address = "Enter the Address";
+        }
+        if(!formData.dateOfBirth){
+            newErrors.dateOfBirth = "Enter the Date Of Birth"
+        }
+        // if(!/^[a-zA-Z]+@[a-zA-Z]+\.[a-zA-Z]+$/.test(formData.email)){
+        //     newErrors.email="enter correct email";
+        // }
+        if(!/^[a-zA-Z\s]+$/.test(formData.fullName)){
+            newErrors.fullName="full name should only contain alphabets";
+        }
+        if(!formData.cardType){
+            newErrors.cardType="Card Type is required";
+        }
+        if(!formData.aadharPdf){
+            newErrors.aadharPdf="Aadhar proof is required";
+        }
+        if(!formData.panPdf){
+            newErrors.panPdf="Pan Proof is required";
+        }
+        if(!formData.incomeProofPdf){
+            newErrors.incomeProofPdf="income Proof is required";
+        }
+        
+        setErrors(newErrors);
+        return Object.keys(newErrors).length===0;
+    }
+    const handleSubmit=(e)=>{
+        e.preventDefault();
+        if(!validateForm()){
+            console.log("incomplete values");
+            return;
+        }
+        console.log("updated successfully");
+        // navigate('/onboarding');
+    }
+    return(
+        <>
+        <div className="bg-white vh-100 d-flex align-items-center" style={{marginTop:"150px" , marginBottom:"200px"}}>
+            <div className="container">
+                <div className="row justify-content-center">
+                    <div className="col-lg-10 col-xl-12">
+                        <h2 className=" fw-semibold mb-3" style={{color:"#007b8f"}}>Edit User Details</h2>
+                        <div className="card border-success form-card slide-up">
+                            <div className="card-body p-4">
+                                <div className="row g-3">
+                                    <div className="col md-12">
+                                        <label  className="form-label  fw-semibold mb-1"  >Full Name *</label>
+                                        <input type="text" value={formData.fullName} className="form-control form-control-sm" name="fullName" onChange={handleInputChange} placeholder="enter full name"/>
+                                        {errors.fullName && <small className="text-danger">{errors.fullName}</small>}
+                                    </div>
+                                    <div className="col md-12">
+                                        <label  className="form-label  fw-semibold mb-1">Phone Number *</label>
+                                        <input type="tel" value={formData.phoneNumber} className="form-control form-control-sm" name="phone" onChange={handleInputChange} placeholder="enter phone number"/>
+                                        {errors.phoneNumber && <small className="text-danger">{errors.phoneNumber}</small>}
+                                    </div>
+                                    <div className="col md-12">
+                                        <label  className="form-label  fw-semibold mb-1">Email *</label>
+                                        <input type="email" value={formData.email} className="form-control form-control-sm" name="email" onChange={handleInputChange} placeholder="enter email"/>
+                                        {errors.email && <small className="text-danger">{errors.email}</small>}
+                                    </div>
+                                    <div className="col md-12">
+                                        <label  className="form-label  fw-semibold mb-1">Address *</label>
+                                        <input type="text" value={formData.address} className="form-control form-control-sm" name="address" onChange={handleInputChange} placeholder="enter Address"/>
+                                        {errors.address && <small className="text-danger">{errors.address}</small>}
+                                    </div>
+                                    <div className="col md-12">
+                                        <label  className="form-label  fw-semibold mb-1">DOB *</label>
+                                        <input type="dob" value={formData.dateOfBirth} className="form-control form-control-sm" name="dob" onChange={handleInputChange} placeholder="enter DOB"/>
+                                        {errors.dateOfBirth && <small className="text-danger">{errors.dateOfBirth}</small>}
+                                    </div>
+                                    <div className="col-md-12">
+                                        <label className="form-label  fw-semibold mb-1">Card Type *</label>
+                                        <select  className="form-select form-select-sm" name="product" value={formData.product} onChange={handleInputChange}>
+                                            <option value="">Select Card</option>
+                                            <option value="SILVER">Silver</option>
+                                            <option value="GOLD">Gold</option>
+                                            <option value="PLATINUM">Platinum</option>
+                                        </select>
+                                        {errors.product && <small className="text-danger">{errors.product}</small>}
+                                    </div>
+                                    <div className="col-md-12">
+                                        <label className="form-label  fw-semibold mb-1">Aadhar proof *</label>
+                                        <div className="input-group input-group-sm">
+                                            <input type="text" className="form-control" value={formData.aadharPdf?.name || 'no file'} readOnly/>
+                                            <label className="btn btn-sm btn-primary">
+                                                Attach
+                                                <input type="file" onChange={(e)=>handleFileChange(e,'aadharPdf')} hidden />
+                                            </label>
+                                        </div>
+                                        {errors.aadharPdf && <small className="text-danger">{errors.aadharPdf}</small>}
+                                    </div>
+                                    <div className="col-md-12">
+                                        <label className="form-label  fw-semibold mb-1">Pan proof *</label>
+                                        <div className="input-group input-group-sm">
+                                            <input type="text" className="form-control" value={formData.panPdf?.name || 'no file'} readOnly/>
+                                            <label className="btn btn-sm btn-primary">
+                                                Attach
+                                                <input type="file" onChange={(e)=>handleFileChange(e,'panPdf')} hidden />
+                                            </label>
+                                        </div>
+                                        {errors.panPdf && <small className="text-danger">{errors.panPdf}</small>}
+                                    </div>
+                                    <div className="col-md-12">
+                                        <label className="form-label  fw-semibold mb-1">income proof *</label>
+                                        <div className="input-group input-group-sm">
+                                            <input type="text" className="form-control" value={formData.incomeProofPdf?.name || 'no file'} readOnly/>
+                                            <label className="btn btn-sm btn-primary">
+                                                Attach
+                                                <input type="file" onChange={(e)=>handleFileChange(e,'incomeProofPdf')} hidden />
+                                            </label>
+                                        </div>
+                                        {errors.incomeProofPdf && <small className="text-danger">{errors.incomeProofPdf}</small>}
+                                    </div>
+                                    
+                                    <div className="col-12 mt-3">
+                                        <Link to={'/onboarding'}><button onClick={handleSubmit} className="btn w-100" style={{background:"linear-gradient(to bottom, #007b8f, #00434e)" , color:"white" , fontSize:"20px"}}>Submit</button></Link>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </>
+    )
+}
+export default EditApplication;
