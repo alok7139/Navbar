@@ -1,0 +1,522 @@
+import React, { useState } from 'react';
+import { FileText, User, Phone, Calendar, CheckCircle, XCircle, Filter, X, Search, Eye, ArrowLeft, Download } from 'lucide-react';
+ 
+import VerificationDetails from './VerificationDetails';
+ 
+ 
+import './DocumentVerificationApp.css'
+ 
+const mockApplications = [
+  {
+    id: 'APP001',
+    userName: 'John Doe',
+    email: 'john.doe@example.com',
+    phone: '+91 9876543210',
+    submittedDate: '2024-10-10',
+    status: 'inprogress',
+    cardType: 'Silver',
+    documents: [
+      { name: 'aadhar_front.jpg', size: '2.3 MB', type: 'Aadhar Front' },
+      { name: 'aadhar_back.jpg', size: '2.1 MB', type: 'Aadhar Back' }
+    ]
+  },
+  {
+    id: 'APP002',
+    userName: 'Jane Smith',
+    email: 'jane.smith@example.com',
+    phone: '+91 9123456789',
+    submittedDate: '2024-10-12',
+    status: 'approved',
+    cardType: 'Gold',
+    documents: [
+      { name: 'pan_card.jpg', size: '1.8 MB', type: 'PAN Card' }
+    ]
+  },
+  {
+    id: 'APP003',
+    userName: 'Mike Johnson',
+    email: 'mike.j@example.com',
+    phone: '+91 8888877777',
+    submittedDate: '2024-10-13',
+    status: 'rejected',
+    rejectionReason: 'Document image is blurry and text is not readable',
+    cardType: 'Platinum',
+    documents: [
+      { name: 'passport.jpg', size: '3.2 MB', type: 'Passport' }
+    ]
+  },
+  {
+    id: 'APP004',
+    userName: 'Sarah Williams',
+    email: 'sarah.w@example.com',
+    phone: '+91 9999988888',
+    submittedDate: '2024-10-14',
+    status: 'inprogress',
+    cardType: `Silver`,
+    documents: [
+      { name: 'dl_front.jpg', size: '2.5 MB', type: 'DL Front' },
+      { name: 'dl_back.jpg', size: '2.4 MB', type: 'DL Back' }
+    ]
+  }
+];
+ 
+const DocumentVerificationApp = () => {
+  const [view, setView] = useState('list'); // 'list' or 'details'
+  const [selectedApp, setSelectedApp] = useState(null);
+  const [applications, setApplications] = useState(mockApplications);
+  const [showFilters, setShowFilters] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showReasonModal, setShowReasonModal] = useState(false);
+  const [selectedReason, setSelectedReason] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [rejectionError, setRejectionError] = useState('');
+  const [filters, setFilters] = useState({
+    search: '',
+    status: 'all',
+    cardType: 'all'
+  });
+ 
+  const filteredApplications = applications.filter(app => {
+    const searchLower = filters.search.toLowerCase();
+    const matchesSearch = filters.search === '' ||
+                         app.userName.toLowerCase().includes(searchLower) ||
+                         app.id.toLowerCase().includes(searchLower) ||
+                         app.email.toLowerCase().includes(searchLower) ||
+                         app.phone.includes(filters.search) ||
+                         app.submittedDate.includes(filters.search) ||
+                         app.cardType.toLowerCase().includes(searchLower);
+    const matchesStatus = filters.status === 'all' || app.status === filters.status;
+    const matchesCardType = filters.cardType === 'all' || app.cardType === filters.cardType;
+    return matchesSearch && matchesStatus && matchesCardType;
+  });
+ 
+  const stats = {
+    total: applications.length,
+    pending: applications.filter(a => a.status === 'inprogress').length
+  };
+ 
+  const activeFiltersCount = Object.values(filters).filter(v => v !== '' && v !== 'all').length;
+ 
+  const handleVerify = (appId) => {
+    const app = applications.find(a => a.id === appId);
+    setSelectedApp(app);
+    setView('details');
+  };
+ 
+  const handleApprove = () => {
+    setApplications(prev => prev.map(app =>
+      app.id === selectedApp.id ? { ...app, status: 'approved' } : app
+    ));
+    setView('list');
+    setSelectedApp(null);
+  };
+ 
+  const handleReject = () => {
+    if (!rejectionReason.trim()) {
+      setRejectionError('Please provide a rejection reason');
+      return;
+    }
+    setApplications(prev => prev.map(app =>
+      app.id === selectedApp.id ? { ...app, status: 'rejected', rejectionReason } : app
+    ));
+    setShowRejectModal(false);
+    setRejectionReason('');
+    setRejectionError('');
+    setView('list');
+    setSelectedApp(null);
+  };
+ 
+  const resetFilters = () => {
+    setFilters({ search: '', status: 'all', cardType: 'all' });
+  };
+ 
+  const getStatusBadge = (status) => {
+    const badges = {
+      inprogress: { class: 'status-inprogress', icon: <Calendar size={16} />, text: 'Progress' },
+      approved: { class: 'status-approved', icon: <CheckCircle size={16} />, text: 'Approved' },
+      rejected: { class: 'status-rejected', icon: <XCircle size={16} />, text: 'Rejected' }
+    };
+    const badge = badges[status];
+    return (
+      <span className={`status-badge ${badge.class}`}>
+        {badge.icon}
+        {badge.text}
+      </span>
+    );
+  };
+ 
+  if (view === 'details' && selectedApp) {
+    return <VerificationDetails
+      application={selectedApp}
+      onBack={() => { setView('list'); setSelectedApp(null); }}
+      onApprove={handleApprove}
+      onReject={() => setShowRejectModal(true)}
+      showRejectModal={showRejectModal}
+      setShowRejectModal={setShowRejectModal}
+      rejectionReason={rejectionReason}
+      setRejectionReason={setRejectionReason}
+      rejectionError={rejectionError}
+      setRejectionError={setRejectionError}
+      handleRejectSubmit={handleReject}
+    />;
+  }
+ 
+  return (
+    <div className="verification-container">
+     
+      <header className="verification-header">
+        <div className="header-content">
+          <div className="header-left">
+            <h1 className="page-title">Document Verification</h1>
+            <p className="page-subtitle">Review and verify submitted documents</p>
+          </div>
+          <div className="header-stats">
+            <div className="stat-card">
+              <div className="stat-icon stat-icon-total">
+                <FileText size={24} />
+              </div>
+              <div className="stat-info">
+                <p className="stat-label">Total Applications</p>
+                <p className="stat-value">{stats.total}</p>
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon stat-icon-pending">
+                <Calendar size={24} />
+              </div>
+              <div className="stat-info">
+                <p className="stat-label">Pending Review</p>
+                <p className="stat-value">{stats.pending}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+ 
+      <div className="verification-content">
+        <div className="filters-section">
+          <div className="filters-header">
+            <button
+              className={`filter-toggle-btn ${showFilters ? 'active' : ''}`}
+              onClick={() => setShowFilters(!showFilters)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.75rem 1.5rem',
+                background: showFilters ? 'linear-gradient(135deg, #113f67 0%, #38598b 100%)' : 'linear-gradient(135deg, #113f67 0%, #38598b 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                fontSize: '0.95rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+            >
+              <Filter size={20} />
+              Filters
+              {activeFiltersCount > 0 && (
+                <span className="filter-count">{activeFiltersCount}</span>
+              )}
+            </button>
+            {activeFiltersCount > 0 && (
+              <button className="reset-filters-btn" onClick={resetFilters}>
+                <X size={16} />
+                Reset Filters
+              </button>
+            )}
+          </div>
+          <div className={`filters-content ${showFilters ? 'show' : ''}`}>
+            <div className="filter-grid">
+              <div className="filter-group">
+                <label className="filter-label">Search</label>
+                <div className="search-input-wrapper">
+                  <Search size={18} />
+                  <input
+                    type="text"
+                    className="filter-input"
+                    placeholder="Search by name, ID, email, phone, date..."
+                    value={filters.search}
+                    onChange={(e) => setFilters({...filters, search: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div className="filter-group">
+                <label className="filter-label">Status</label>
+                <select
+                  className="filter-select"
+                  value={filters.status}
+                  onChange={(e) => setFilters({...filters, status: e.target.value})}
+                >
+                  <option value="all">All Status</option>
+                  <option value="inprogress">Progress</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+              <div className="filter-group">
+                <label className="filter-label">Card Type</label>
+                <select
+                  className="filter-select"
+                  value={filters.cardType}
+                  onChange={(e) => setFilters({...filters, cardType: e.target.value})}
+                >
+                  <option value="all">All Types</option>
+                  <option value="aadhar">Gold</option>
+                  <option value="pan">Platinum</option>
+                  <option value="passport">silver</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+ 
+        <div className="table-container">
+          <div className="table-wrapper">
+            {filteredApplications.length > 0 ? (
+              <table className="applications-table">
+                <thead>
+                  <tr>
+                    <th>Application ID</th>
+                    <th>User Name</th>
+                    <th>Phone</th>
+                    <th>Submitted Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredApplications.map((app, idx) => (
+                    <tr key={app.id} style={{animationDelay: `${idx * 0.05}s`}}>
+                      <td>
+                        <span className="app-id">{app.id}</span>
+                      </td>
+                      <td>
+                        <div className="user-name">{app.userName}</div>
+                      </td>
+                      <td>
+                        <span className="phone-text">{app.phone}</span>
+                      </td>
+                      <td>
+                        <span className="date-text">{app.submittedDate}</span>
+                      </td>
+                      <td>
+                        {getStatusBadge(app.status)}
+                      </td>
+                      <td>
+                        {app.status === 'inprogress' ? (
+                          <button className="verify-btn" onClick={() => handleVerify(app.id)}>
+                            <Eye size={18} />
+                            Verify
+                          </button>
+                        ) : app.status === 'approved' ? (
+                          <span className="action-verified">
+                            <CheckCircle size={18} />
+                            Verified
+                          </span>
+                        ) : (
+  <button
+    className="view-reason-btn"
+    onClick={() => {
+      setSelectedReason(app.rejectionReason);
+      setShowReasonModal(true);
+    }}
+  >
+    <Eye size={18} />
+    Reason
+  </button>
+)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="empty-state">
+                <FileText className="empty-icon" />
+                <h3 className="empty-title">No Applications Found</h3>
+                <p className="empty-subtitle">Try adjusting your filters</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+ 
+      {showReasonModal && (
+        <div className="modal-overlay" onClick={() => setShowReasonModal(false)}>
+          <div className="simple-reason-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="simple-modal-header">
+              <div className="reason-icon-wrapper">
+                <XCircle size={24} />
+              </div>
+              <h3 className="simple-modal-title">Rejection Reason</h3>
+              <button className="simple-modal-close" onClick={() => setShowReasonModal(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="simple-modal-body">
+              <div className="reason-box">
+                <p className="reason-text">{selectedReason}</p>
+              </div>
+            </div>
+            <div className="simple-modal-footer">
+              <button className="simple-close-btn" onClick={() => setShowReasonModal(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+ 
+export default DocumentVerificationApp;
+
+
+
+import { FileText, User, Phone, Calendar, CheckCircle, XCircle, Filter, X, Search, Eye, ArrowLeft, Download } from 'lucide-react';
+import React from 'react';
+// import DocumentVerificationApp from './DocumentverificationApp';
+import "./VerificationDetails.css";
+const VerificationDetails = ({
+  application,
+  onBack,
+  onApprove,
+  onReject,
+  showRejectModal,
+  setShowRejectModal,
+  rejectionReason,
+  setRejectionReason,
+  rejectionError,
+  setRejectionError,
+  handleRejectSubmit
+}) => {
+ 
+   
+  return (
+    <>
+      <div className="verification-details-container">
+        <div className="details-header">
+          <button className="back-btn" onClick={onBack}>
+            <ArrowLeft size={20} />
+            Back 
+          </button>
+          <h1 className="details-title">Application Details</h1>
+        </div>
+ 
+        <div className="details-content">
+     
+          <div className="details-card">
+            <div className="card-header">
+              {/* <h2 className="card-title">Application Information</h2> */}
+              <span className="app-id-badge">{application.id}</span>
+            </div>
+            <div className="info-grid">
+              <div className="info-item">
+                <span className="info-label">Full Name</span>
+                <span className="info-value">{application.userName}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Email</span>
+                <span className="info-value">{application.email}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Phone</span>
+                <span className="info-value">{application.phone}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Card Type</span>
+                <span className="info-value card-type">{application.cardType.replace('_', ' ')}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Submitted Date</span>
+                <span className="info-value">{application.submittedDate}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Status</span>
+                <span className="info-value">{application.status}</span>
+              </div>
+            </div>
+          </div>
+ 
+          <div className="details-card">
+            <div className="card-header">
+              <h2 className="card-title">Uploaded Documents</h2>
+            </div>
+            <div className="documents-grid">
+              {application.documents.map((doc, idx) => (
+                <div key={idx} className="document-item">
+                  <div className="document-icon">
+                    <FileText size={28} />
+                  </div>
+                  <div className="document-info">
+                    <p className="document-label">{doc.type}</p>
+                    <p className="document-name">{doc.name}</p>
+                    <p className="document-size">{doc.size}</p>
+                  </div>
+                  <button className="view-document-btn">
+                    <Eye size={20} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+ 
+          {application.status === 'inprogress' && (
+            <div className="action-buttons">
+              <button className="reject-btn" onClick={onReject}>
+                <XCircle size={20} />
+                Reject Application
+              </button>
+              <button className="approve-btn" onClick={onApprove}>
+                <CheckCircle size={20} />
+                Approve Application
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+ 
+      {showRejectModal && (
+        <div className="modal-overlay" onClick={() => setShowRejectModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">Reject Application</h3>
+              <button className="modal-close" onClick={() => setShowRejectModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <label className="modal-label">Rejection Reason *</label>
+              <textarea
+                className={`modal-textarea ${rejectionError ? 'error' : ''}`}
+                rows="5"
+                placeholder="Enter the reason for rejection..."
+                value={rejectionReason}
+                onChange={(e) => {
+                  setRejectionReason(e.target.value);
+                  setRejectionError('');
+                }}
+              />
+              {rejectionError && <span className="error-text">{rejectionError}</span>}
+            </div>
+            <div className="modal-footer">
+              <button className="modal-cancel-btn" onClick={() => setShowRejectModal(false)}>
+                Cancel
+              </button>
+              <button className="modal-reject-btn" onClick={handleRejectSubmit}>
+                Reject Application
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+ 
+export default VerificationDetails;
