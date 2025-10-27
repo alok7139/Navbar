@@ -5,7 +5,7 @@ import { Modal } from "bootstrap";
 const API_BASE = "http://localhost:8080";
 
 export default function OfferConfirmation() {
-  const [data, setData] = useState([]); // ✅ API data
+  const [data, setData] = useState([]); 
   const [who, setWho] = useState(null);
   const [disabledIds, setDisabledIds] = useState(new Set());
   const [query, setQuery] = useState("");
@@ -78,7 +78,10 @@ export default function OfferConfirmation() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setWho({ ...row, ...res.data });
+      const updatedrow = {...row,...res.data};
+
+      setWho(updatedrow);
+      
       bsModal.current?.show();
 
     } catch (err) {
@@ -86,6 +89,8 @@ export default function OfferConfirmation() {
       alert("Unable to generate credit score!");
     }
   };
+
+  
 
   return (
     <div className="container py-4">
@@ -119,8 +124,8 @@ export default function OfferConfirmation() {
                 <th>APPLICANT NAME</th>
                 <th>APPLICATION DATE</th>
                 <th>DOCUMENT STATUS</th>
-                <th>CREDIT SCORE</th>
-                <th style={{ minWidth: 110 }}>ACTION</th>
+                <th style={{marginBottom:"50px"}}>Card Type</th>
+                <th style={{width:"50px"}}>ACTION</th>
               </tr>
             </thead>
 
@@ -129,23 +134,27 @@ export default function OfferConfirmation() {
                 const isDisabled = disabledIds.has(r.appId);
                 return (
                   <tr key={r.appId}>
-                    <td>{r.appId}</td>
+                    <td>{r.appId.substring(0,8)}</td>
                     <td>{r.fullName}</td>
                     <td>{r.submittedAt?.split("T")[0]}</td>
-                    <td><span className="badge bg-success">{r.documentVerificationStatus}</span></td>
-                    <td>{r.creditScore || "-"}</td>
+                    <td><span className="badge text-bg" style={{backgroundColor:"#086876ff" , color:"white"}}>{r.documentVerificationStatus}</span></td>
+                    <td>{r.cardType || "-"}</td>
 
-                    <td>
-                      <button className="btn btn-sm btn-success"
-                        onClick={() => handleActionClick(r)}
-                        disabled={isDisabled}>
-                        Approve
+                     <td style={{minWidth:110 }}>
+                       <div className='d-flex gap-1 flex-wrap w-100'>
+                                 <button className="btn btn-sm  " style={{backgroundColor:"#086876ff" , color:"white"}}
+                               onClick={() => handleActionClick(r)}
+                       disabled={isDisabled}>Approve
                       </button>
-                      <button className="btn btn-sm btn-danger ms-1"
-                        disabled>
-                        Reject
-                      </button>
-                    </td>
+                        <button
+                       className="btn btn-sm  " style={{backgroundColor:"#ef5a5a" ,color:"white"}}
+                       onClick={() => handleActionClick(r)}
+                        disabled={isDisabled}
+                          >
+                            Reject
+                         </button>
+                       </div>
+                 </td>
                   </tr>
                 );
               })}
