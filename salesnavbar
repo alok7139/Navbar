@@ -117,51 +117,51 @@ const Navbar = ({ sidebarOpen, toggleSidebar, adminName }) => {
       <div className="dash-navbar-right">
         {/* Notification Bell - Only for SALES role */}
         {isSalesRole && (
-          <div className="notification-container" ref={notificationRef}>
+          <div className="dash-notification-container" ref={notificationRef}>
             <button
-              className="notification-bell"
+              className="dash-notification-bell"
               onClick={() => setShowNotifications(!showNotifications)}
               aria-label="Notifications"
             >
               <Bell size={20} />
               {unreadCount > 0 && (
-                <span className="notification-badge">{unreadCount}</span>
+                <span className="dash-notification-badge">{unreadCount}</span>
               )}
             </button>
 
             {showNotifications && (
-              <div className="notification-dropdown">
-                <div className="notification-header">
+              <div className="dash-notification-dropdown">
+                <div className="dash-notification-header">
                   <h3>Contact Messages</h3>
-                  <span className="notification-count">{unreadCount} unread</span>
+                  <span className="dash-notification-count">{unreadCount} unread</span>
                 </div>
                 
-                <div className="notification-list">
+                <div className="dash-notification-list">
                   {notifications.length === 0 ? (
-                    <div className="notification-empty">No messages yet</div>
+                    <div className="dash-notification-empty">No messages yet</div>
                   ) : (
                     notifications.map((notification) => (
                       <div
                         key={notification.id}
-                        className={`notification-item ${!notification.isRead ? 'unread' : ''}`}
+                        className={`dash-notification-item ${!notification.isRead ? 'dash-notification-unread' : ''}`}
                         onClick={() => handleNotificationClick(notification)}
                       >
-                        <div className="notification-content">
-                          <div className="notification-title">
+                        <div className="dash-notification-content">
+                          <div className="dash-notification-title">
                             {notification.name || 'Anonymous'}
                           </div>
-                          <div className="notification-email">
+                          <div className="dash-notification-email">
                             {notification.email}
                           </div>
-                          <div className="notification-message">
+                          <div className="dash-notification-message">
                             {notification.message}
                           </div>
-                          <div className="notification-time">
+                          <div className="dash-notification-time">
                             {new Date(notification.createdAt || notification.timestamp).toLocaleString()}
                           </div>
                         </div>
                         <button
-                          className="notification-delete"
+                          className="dash-notification-delete"
                           onClick={(e) => {
                             e.stopPropagation();
                             deleteNotification(notification.id);
@@ -201,14 +201,15 @@ export default Navbar;
 
 
 
+
 /* Notification Container */
-.notification-container {
+.dash-notification-container {
   position: relative;
   margin-right: 20px;
 }
 
 /* Notification Bell Button */
-.notification-bell {
+.dash-notification-bell {
   position: relative;
   background: none;
   border: none;
@@ -217,17 +218,17 @@ export default Navbar;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #333;
+  color: #6b7280;
   transition: all 0.3s ease;
-  border-radius: 50%;
+  border-radius: 8px;
 }
 
-.notification-bell:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+.dash-notification-bell:hover {
+  background-color: #f3f4f6;
 }
 
 /* Notification Badge */
-.notification-badge {
+.dash-notification-badge {
   position: absolute;
   top: 2px;
   right: 2px;
@@ -242,7 +243,7 @@ export default Navbar;
 }
 
 /* Notification Dropdown */
-.notification-dropdown {
+.dash-notification-dropdown {
   position: absolute;
   top: 45px;
   right: 0;
@@ -258,7 +259,7 @@ export default Navbar;
 }
 
 /* Notification Header */
-.notification-header {
+.dash-notification-header {
   padding: 15px 20px;
   border-bottom: 1px solid #e0e0e0;
   display: flex;
@@ -267,14 +268,14 @@ export default Navbar;
   background-color: #f8f9fa;
 }
 
-.notification-header h3 {
+.dash-notification-header h3 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
   color: #333;
 }
 
-.notification-count {
+.dash-notification-count {
   font-size: 12px;
   color: #666;
   background-color: #e9ecef;
@@ -283,30 +284,30 @@ export default Navbar;
 }
 
 /* Notification List */
-.notification-list {
+.dash-notification-list {
   overflow-y: auto;
   max-height: 420px;
 }
 
-.notification-list::-webkit-scrollbar {
+.dash-notification-list::-webkit-scrollbar {
   width: 6px;
 }
 
-.notification-list::-webkit-scrollbar-track {
+.dash-notification-list::-webkit-scrollbar-track {
   background: #f1f1f1;
 }
 
-.notification-list::-webkit-scrollbar-thumb {
+.dash-notification-list::-webkit-scrollbar-thumb {
   background: #888;
   border-radius: 3px;
 }
 
-.notification-list::-webkit-scrollbar-thumb:hover {
+.dash-notification-list::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
 
 /* Notification Item */
-.notification-item {
+.dash-notification-item {
   padding: 15px 20px;
   border-bottom: 1px solid #e0e0e0;
   display: flex;
@@ -317,15 +318,15 @@ export default Navbar;
   position: relative;
 }
 
-.notification-item:hover {
+.dash-notification-item:hover {
   background-color: #f8f9fa;
 }
 
-.notification-item.unread {
+.dash-notification-item.dash-notification-unread {
   background-color: #e3f2fd;
 }
 
-.notification-item.unread::before {
+.dash-notification-item.dash-notification-unread::before {
   content: '';
   position: absolute;
   left: 0;
@@ -336,25 +337,25 @@ export default Navbar;
 }
 
 /* Notification Content */
-.notification-content {
+.dash-notification-content {
   flex: 1;
   padding-right: 10px;
 }
 
-.notification-title {
+.dash-notification-title {
   font-weight: 600;
   font-size: 14px;
   color: #333;
   margin-bottom: 4px;
 }
 
-.notification-email {
+.dash-notification-email {
   font-size: 12px;
   color: #666;
   margin-bottom: 6px;
 }
 
-.notification-message {
+.dash-notification-message {
   font-size: 13px;
   color: #555;
   margin-bottom: 6px;
@@ -366,13 +367,13 @@ export default Navbar;
   text-overflow: ellipsis;
 }
 
-.notification-time {
+.dash-notification-time {
   font-size: 11px;
   color: #999;
 }
 
 /* Delete Button */
-.notification-delete {
+.dash-notification-delete {
   background: none;
   border: none;
   cursor: pointer;
@@ -386,13 +387,13 @@ export default Navbar;
   flex-shrink: 0;
 }
 
-.notification-delete:hover {
+.dash-notification-delete:hover {
   background-color: #ffebee;
   color: #dc3545;
 }
 
 /* Empty State */
-.notification-empty {
+.dash-notification-empty {
   padding: 40px 20px;
   text-align: center;
   color: #999;
@@ -401,25 +402,30 @@ export default Navbar;
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .notification-dropdown {
+  .dash-notification-dropdown {
     width: 320px;
     max-height: 400px;
   }
 
-  .notification-list {
+  .dash-notification-list {
     max-height: 320px;
   }
 }
 
 @media (max-width: 480px) {
-  .notification-dropdown {
+  .dash-notification-dropdown {
     width: 280px;
     right: -20px;
   }
 
-  .notification-item {
+  .dash-notification-item {
     padding: 12px 15px;
   }
+
+  .dash-notification-header {
+    padding: 12px 15px;
+  }
+}
 
   .notification-header {
     padding: 12px 15px;
