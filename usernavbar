@@ -50,3 +50,254 @@ const name = user?.firstName || "Guest";
 };
 
 export default Navbar;
+
+
+
+
+
+
+
+
+
+
+
+
+import React, { useState, useEffect } from "react";
+import { Menu, X, User, LogOut, Bell, Trash2, CheckCircle } from "lucide-react";
+import "./Navbar.css";
+import { useNavigate } from "react-router-dom";
+import image from "./images/standard-chartered-logo.png";
+import axios from "axios";
+
+const API_BASE = "http://localhost:8080"; // replace with your backend URL
+
+const Navbar = ({ sidebarOpen, toggleSidebar }) => {
+  const navigate = useNavigate();
+  const [notifications, setNotifications] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  let user = null;
+  try {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    user = storedUser ? storedUser : {};
+  } catch {
+    user = null;
+  }
+
+  const name = user?.firstName || "Guest";
+  const role = localStorage.getItem("role");
+
+  // 🔹 Fetch all contact queries (no token)
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`${API_BASE}/api/contact/all`);
+      const data = res.data || [];
+      setNotifications(data);
+    } catch (err) {
+      console.error("Error fetching notifications:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🔹 Delete a contact message (no token)
+  const deleteNotification = async (id) => {
+    try {
+      await axios.delete(`${API_BASE}/api/contact/${id}`);
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    } catch (err) {
+      console.error("Error deleting message:", err);
+    }
+  };
+
+  // 🔹 Mark as read (frontend only)
+  const markAsRead = (id) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+  };
+
+  useEffect(() => {
+    if (role === "SALES") fetchNotifications();
+  }, [role]);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  return (
+    <nav className="dash-navbar">
+      <div className="dash-navbar-left">
+        <button className="dash-hamburger" onClick={toggleSidebar}>
+          {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+        <img src={image} alt="Logo" className="dash-logo-img" />
+      </div>
+
+      <div className="dash-navbar-right">
+        {/* 🔹 Notification Bell only for SALES role */}
+        {role === "SALES" && (
+          <div className="notification-wrapper">
+            <button
+              className="notification-btn"
+              onClick={() => setShowDropdown(!showDropdown)}
+            >
+              <Bell size={22} />
+              {unreadCount > 0 && (
+                <span className="notification-count">{unreadCount}</span>
+              )}
+            </button>
+
+            {showDropdown && (
+              <div className="notification-dropdown">
+                <h4>Contact Queries</h4>
+                {loading ? (
+                  <p className="loading-text">Loading...</p>
+                ) : notifications.length === 0 ? (
+                  <p className="no-data">No messages</p>
+                ) : (
+                  notifications.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`notification-item ${
+                        msg.read ? "read" : "unread"
+                      }`}
+                    >
+                      <div>
+                        <p className="notif-name">{msg.fullName}</p>
+                        <p className="notif-email">{msg.email}</p>
+                        <p className="notif-message">{msg.message}</p>
+                      </div>
+                      <div className="notif-actions">
+                        {!msg.read && (
+                          <button
+                            onClick={() => markAsRead(msg.id)}
+                            title="Mark as Read"
+                          >
+                            <CheckCircle size={18} />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deleteNotification(msg.id)}
+                          title="Delete"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        <User className="dash-user-icon" size={20} />
+        <span className="dash-welcome-text">Welcome, {name}!</span>
+
+        <button
+          className="dash-logout-btn"
+          onClick={() => {
+            localStorage.removeItem("token");
+            localStorage.removeItem("role");
+            localStorage.removeItem("user");
+            window.dispatchEvent(new Event("logout"));
+            navigate("/login", { replace: true });
+          }}
+        >
+          <LogOut size={18} />
+          Logout
+        </button>
+      </div>
+    </nav>
+  );
+};
+
+export default Navbar;
+
+
+
+.notification-wrapper {
+  position: relative;
+  margin-right: 20px;
+}
+
+.notification-btn {
+  background: none;
+  border: none;
+  position: relative;
+  cursor: pointer;
+  color: white;
+}
+
+.notification-count {
+  position: absolute;
+  top: -5px;
+  right: -7px;
+  background: red;
+  color: white;
+  font-size: 10px;
+  border-radius: 50%;
+  padding: 2px 6px;
+}
+
+.notification-dropdown {
+  position: absolute;
+  right: 0;
+  top: 40px;
+  background: white;
+  width: 300px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  padding: 10px;
+  z-index: 100;
+}
+
+.notification-dropdown h4 {
+  margin: 0 0 8px;
+  font-weight: 600;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+}
+
+.notification-item {
+  border-bottom: 1px solid #eee;
+  padding: 6px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notification-item.unread {
+  background: #f9f9ff;
+}
+
+.notification-item.read {
+  opacity: 0.7;
+}
+
+.notif-actions button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  margin-left: 5px;
+  color: #555;
+}
+
+.notif-name {
+  font-weight: 600;
+}
+
+.notif-message {
+  font-size: 12px;
+  color: #555;
+}
+
+.no-data,
+.loading-text {
+  text-align: center;
+  padding: 10px 0;
+  font-size: 14px;
+  color: #555;
+}
+
