@@ -1,127 +1,179 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, User, LogOut, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import axios from 'axios';
 import './Navbar.css';
 import image from './images/standard-chartered-logo.png';
-import axios from 'axios';
 
-const API_BASE = "http://localhost:8080"; // update to your backend URL
-
-const Navbar = ({ sidebarOpen, toggleSidebar }) => {
+const Navbar = ({ sidebarOpen, toggleSidebar, adminName }) => {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const dropdownRef = useRef(null);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const notificationRef = useRef(null);
 
-  // get user details
   let user = null;
+  let userRole = null;
+  
   try {
     const storedUser = JSON.parse(localStorage.getItem("user"));
     user = storedUser ? storedUser : {};
+    userRole = localStorage.getItem("role");
   } catch (error) {
     user = null;
   }
 
   const name = user?.firstName || "Guest";
-  const role = localStorage.getItem("role");
+  const isSalesRole = userRole === "SALES";
 
-  // fetch notifications
+  // Fetch notifications from contactus API
   const fetchNotifications = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/api/contact/getAllContacts`);
-      setNotifications(res.data || []);
-    } catch (err) {
-      console.error("Error fetching notifications:", err);
+      const response = await axios.get('YOUR_API_BASE_URL/api/contactus');
+      
+      setNotifications(response.data);
+      // Count unread messages
+      const unread = response.data.filter(notif => !notif.isRead).length;
+      setUnreadCount(unread);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
     }
   };
 
-  useEffect(() => {
-    if (role === "SALES") {
-      fetchNotifications();
-    }
-  }, [role]);
-
-  // delete notification
-  const deleteNotification = async (id) => {
-    try {
-      await axios.delete(`${API_BASE}/api/contact/delete/${id}`);
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
-    } catch (err) {
-      console.error("Error deleting notification:", err);
-    }
-  };
-
-  // mark as read (frontend only)
-  const markAsRead = (id) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+  // Mark notification as read (local state only - no API)
+  const markAsRead = (notificationId) => {
+    // Update local state only
+    setNotifications(prev =>
+      prev.map(notif =>
+        notif.id === notificationId ? { ...notif, isRead: true } : notif
+      )
     );
+    setUnreadCount(prev => Math.max(0, prev - 1));
   };
 
-  // unread count
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  // Delete notification
+  const deleteNotification = async (notificationId) => {
+    try {
+      await axios.delete(`YOUR_API_BASE_URL/api/contactus/${notificationId}`);
+      
+      const deletedNotif = notifications.find(n => n.id === notificationId);
+      setNotifications(prev => prev.filter(notif => notif.id !== notificationId));
+      
+      // Decrease unread count if the deleted notification was unread
+      if (deletedNotif && !deletedNotif.isRead) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
+  };
 
-  // close dropdown on outside click
+  // Handle notification click (marks as read locally)
+  const handleNotificationClick = (notification) => {
+    if (!notification.isRead) {
+      markAsRead(notification.id);
+    }
+  };
+
+  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false);
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setShowNotifications(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Fetch notifications on mount and set up polling
+  useEffect(() => {
+    if (isSalesRole) {
+      fetchNotifications();
+      // Poll for new notifications every 30 seconds
+      const interval = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isSalesRole]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("user");
+    window.dispatchEvent(new Event("logout"));
+    navigate("/login", { replace: true });
+  };
+
   return (
-    <nav className="dash-navbar d-flex justify-content-between align-items-center px-3">
-      <div className="dash-navbar-left d-flex align-items-center">
-        <button className="dash-hamburger btn" onClick={toggleSidebar}>
+    <nav className="dash-navbar">
+      <div className="dash-navbar-left">
+        <button className="dash-hamburger" onClick={toggleSidebar}>
           {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
-        <img src={image} alt="Logo" className="dash-logo-img" />
+        <img src={image} alt="NGOS Logo" className="dash-logo-img" />
       </div>
-
-      <div className="dash-navbar-right d-flex align-items-center gap-3 position-relative">
-        {role === "SALES" && (
-          <div className="position-relative" ref={dropdownRef}>
+      
+      <div className="dash-navbar-right">
+        {/* Notification Bell - Only for SALES role */}
+        {isSalesRole && (
+          <div className="notification-container" ref={notificationRef}>
             <button
-              className="btn btn-light position-relative border-0"
-              onClick={() => setShowDropdown(!showDropdown)}
+              className="notification-bell"
+              onClick={() => setShowNotifications(!showNotifications)}
+              aria-label="Notifications"
             >
-              <Bell size={22} />
+              <Bell size={20} />
               {unreadCount > 0 && (
-                <span className="badge bg-danger rounded-circle notification-badge">
-                  {unreadCount}
-                </span>
+                <span className="notification-badge">{unreadCount}</span>
               )}
             </button>
 
-            {showDropdown && (
-              <div className="notification-dropdown shadow fade-in">
-                {notifications.length === 0 ? (
-                  <div className="text-center text-muted p-2">No notifications</div>
-                ) : (
-                  notifications.map((note) => (
-                    <div
-                      key={note.id}
-                      className={`notification-item ${note.read ? '' : 'unread'}`}
-                      onClick={() => markAsRead(note.id)}
-                    >
-                      <span
-                        className="delete-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteNotification(note.id);
-                        }}
+            {showNotifications && (
+              <div className="notification-dropdown">
+                <div className="notification-header">
+                  <h3>Contact Messages</h3>
+                  <span className="notification-count">{unreadCount} unread</span>
+                </div>
+                
+                <div className="notification-list">
+                  {notifications.length === 0 ? (
+                    <div className="notification-empty">No messages yet</div>
+                  ) : (
+                    notifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        className={`notification-item ${!notification.isRead ? 'unread' : ''}`}
+                        onClick={() => handleNotificationClick(notification)}
                       >
-                        ×
-                      </span>
-                      <strong>{note.fullName}</strong>
-                      <div>{note.message}</div>
-                    </div>
-                  ))
-                )}
+                        <div className="notification-content">
+                          <div className="notification-title">
+                            {notification.name || 'Anonymous'}
+                          </div>
+                          <div className="notification-email">
+                            {notification.email}
+                          </div>
+                          <div className="notification-message">
+                            {notification.message}
+                          </div>
+                          <div className="notification-time">
+                            {new Date(notification.createdAt || notification.timestamp).toLocaleString()}
+                          </div>
+                        </div>
+                        <button
+                          className="notification-delete"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteNotification(notification.id);
+                          }}
+                          aria-label="Delete notification"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -129,18 +181,8 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
 
         <User className="dash-user-icon" size={20} />
         <span className="dash-welcome-text">Welcome, {name}!</span>
-
-        <button
-          className="dash-logout-btn btn btn-outline-secondary btn-sm"
-          onClick={() => {
-            localStorage.removeItem("token");
-            localStorage.removeItem("role");
-            localStorage.removeItem("user");
-            window.dispatchEvent(new Event("logout"));
-            navigate("/login", { replace: true });
-          }}
-        >
-          <LogOut size={16} className="me-1" />
+        <button className="dash-logout-btn" onClick={handleLogout}>
+          <LogOut size={18} />
           Logout
         </button>
       </div>
@@ -159,95 +201,227 @@ export default Navbar;
 
 
 
+/* Notification Container */
+.notification-container {
+  position: relative;
+  margin-right: 20px;
+}
 
-.dash-navbar {
-  background: transparent;
-  height: 60px;
+/* Notification Bell Button */
+.notification-bell {
+  position: relative;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
   display: flex;
   align-items: center;
+  justify-content: center;
+  color: #333;
+  transition: all 0.3s ease;
+  border-radius: 50%;
 }
 
-.dash-logo-img {
-  width: 140px;
-  margin-left: 10px;
+.notification-bell:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
-/* Bell Badge */
+/* Notification Badge */
 .notification-badge {
   position: absolute;
-  top: 0;
-  right: 0;
-  font-size: 0.7rem;
-  width: 18px;
-  height: 18px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  top: 2px;
+  right: 2px;
+  background-color: #dc3545;
+  color: white;
+  border-radius: 10px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: bold;
+  min-width: 18px;
+  text-align: center;
 }
 
-/* Dropdown */
+/* Notification Dropdown */
 .notification-dropdown {
   position: absolute;
-  top: 40px;
+  top: 45px;
   right: 0;
-  background-color: whitesmoke;
+  width: 380px;
+  max-height: 500px;
+  background: white;
   border-radius: 8px;
-  min-width: 250px;
-  max-height: 300px;
-  overflow-y: auto;
-  animation: fadeIn 0.3s ease-in-out;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-/* Notification item */
+/* Notification Header */
+.notification-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f8f9fa;
+}
+
+.notification-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.notification-count {
+  font-size: 12px;
+  color: #666;
+  background-color: #e9ecef;
+  padding: 4px 8px;
+  border-radius: 12px;
+}
+
+/* Notification List */
+.notification-list {
+  overflow-y: auto;
+  max-height: 420px;
+}
+
+.notification-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notification-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.notification-list::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.notification-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Notification Item */
 .notification-item {
-  position: relative;
-  padding: 10px;
-  border-bottom: 1px solid #ddd;
+  padding: 15px 20px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.notification-item:last-child {
-  border-bottom: none;
-}
-
-.notification-item.unread {
-  font-weight: bold;
-  background-color: #f9f9f9;
+  transition: background-color 0.2s ease;
+  position: relative;
 }
 
 .notification-item:hover {
-  background-color: #f1f1f1;
+  background-color: #f8f9fa;
 }
 
-/* Delete button */
-.delete-btn {
+.notification-item.unread {
+  background-color: #e3f2fd;
+}
+
+.notification-item.unread::before {
+  content: '';
   position: absolute;
-  top: 5px;
-  left: 8px;
-  font-size: 16px;
-  color: #888;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: #2196f3;
+}
+
+/* Notification Content */
+.notification-content {
+  flex: 1;
+  padding-right: 10px;
+}
+
+.notification-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.notification-email {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 6px;
+}
+
+.notification-message {
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 6px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notification-time {
+  font-size: 11px;
+  color: #999;
+}
+
+/* Delete Button */
+.notification-delete {
+  background: none;
+  border: none;
   cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
-.delete-btn:hover {
-  color: red;
+.notification-delete:hover {
+  background-color: #ffebee;
+  color: #dc3545;
 }
 
-/* Fade-in animation */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
+/* Empty State */
+.notification-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .notification-dropdown {
+    width: 320px;
+    max-height: 400px;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .notification-list {
+    max-height: 320px;
   }
 }
 
-.fade-in {
-  animation: fadeIn 0.3s ease-in-out;
-}
+@media (max-width: 480px) {
+  .notification-dropdown {
+    width: 280px;
+    right: -20px;
+  }
 
+  .notification-item {
+    padding: 12px 15px;
+  }
+
+  .notification-header {
+    padding: 12px 15px;
+  }
+}
