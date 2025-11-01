@@ -1,0 +1,52 @@
+import React from 'react';
+import { Menu, X, User, LogOut } from 'lucide-react';
+import './Navbar.css';
+import { useNavigate } from 'react-router-dom';
+import image from './images/standard-chartered-logo.png';
+
+
+
+const Navbar = ({ sidebarOpen, toggleSidebar, adminName }) => {
+  const navigate = useNavigate();
+  let user = null;
+  try {
+    const storesuser = JSON.parse(localStorage.getItem( "user"));
+
+   user= storesuser ? storesuser: {};
+  } catch (error) {
+
+     user = null;
+  }
+
+
+
+const name = user?.firstName || "Guest";
+  return (
+    <nav className="dash-navbar">
+      <div className="dash-navbar-left">
+  <button className="dash-hamburger" onClick={toggleSidebar}>
+    {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+  </button>
+  <img src={image} alt="NGOS Logo" className="dash-logo-img" /> 
+</div>
+      <div className="dash-navbar-right">
+        <User className="dash-user-icon" size={20} />
+        <span className="dash-welcome-text">Welcome, {name}!</span>
+        <button className="dash-logout-btn" onClick={()=>{
+          localStorage.removeItem("token")
+          localStorage.removeItem("role")
+          localStorage.removeItem("user")
+
+          window.dispatchEvent(new Event("logout"))
+
+          navigate("/login" , {replace:true})
+        }}>
+          <LogOut size={18} />
+          Logout
+        </button>
+      </div>
+    </nav>
+  );
+};
+
+export default Navbar;
