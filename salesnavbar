@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, X, User, LogOut, Bell } from 'lucide-react';
+import { Menu, X, User, LogOut, Bell, BellDot } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './Navbar.css';
@@ -26,13 +26,13 @@ const Navbar = ({ sidebarOpen, toggleSidebar, adminName }) => {
   const name = user?.firstName || "Guest";
   const isSalesRole = userRole === "SALES";
 
-  // Fetch notifications from contactus API
+
   const fetchNotifications = async () => {
     try {
-      const response = await axios.get('YOUR_API_BASE_URL/api/contactus');
+      const response = await axios.get('http://localhost:8080/api/contactus');
       
       setNotifications(response.data);
-      // Count unread messages
+    
       const unread = response.data.filter(notif => !notif.isRead).length;
       setUnreadCount(unread);
     } catch (error) {
@@ -40,9 +40,9 @@ const Navbar = ({ sidebarOpen, toggleSidebar, adminName }) => {
     }
   };
 
-  // Mark notification as read (local state only - no API)
+
   const markAsRead = (notificationId) => {
-    // Update local state only
+  
     setNotifications(prev =>
       prev.map(notif =>
         notif.id === notificationId ? { ...notif, isRead: true } : notif
@@ -51,15 +51,15 @@ const Navbar = ({ sidebarOpen, toggleSidebar, adminName }) => {
     setUnreadCount(prev => Math.max(0, prev - 1));
   };
 
-  // Delete notification
+
   const deleteNotification = async (notificationId) => {
     try {
-      await axios.delete(`YOUR_API_BASE_URL/api/contactus/${notificationId}`);
+      await axios.delete(`http://localhost:8080/api/contactus/delete/${notificationId}`);
       
       const deletedNotif = notifications.find(n => n.id === notificationId);
       setNotifications(prev => prev.filter(notif => notif.id !== notificationId));
       
-      // Decrease unread count if the deleted notification was unread
+
       if (deletedNotif && !deletedNotif.isRead) {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
@@ -68,14 +68,14 @@ const Navbar = ({ sidebarOpen, toggleSidebar, adminName }) => {
     }
   };
 
-  // Handle notification click (marks as read locally)
+
   const handleNotificationClick = (notification) => {
     if (!notification.isRead) {
       markAsRead(notification.id);
     }
   };
 
-  // Close dropdown when clicking outside
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
@@ -87,11 +87,11 @@ const Navbar = ({ sidebarOpen, toggleSidebar, adminName }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Fetch notifications on mount and set up polling
+
   useEffect(() => {
     if (isSalesRole) {
       fetchNotifications();
-      // Poll for new notifications every 30 seconds
+    
       const interval = setInterval(fetchNotifications, 30000);
       return () => clearInterval(interval);
     }
@@ -115,13 +115,15 @@ const Navbar = ({ sidebarOpen, toggleSidebar, adminName }) => {
       </div>
       
       <div className="dash-navbar-right">
-        {/* Notification Bell - Only for SALES role */}
+     
         {isSalesRole && (
-          <div className="dash-notification-container" ref={notificationRef}>
+          <div className="dash-notification-container" ref={notificationRef} >
             <button
+              // style={{ background:"none" , border:"none" , boxShadow:"none"}}
               className="dash-notification-bell"
               onClick={() => setShowNotifications(!showNotifications)}
               aria-label="Notifications"
+              
             >
               <Bell size={20} />
               {unreadCount > 0 && (
@@ -148,7 +150,7 @@ const Navbar = ({ sidebarOpen, toggleSidebar, adminName }) => {
                       >
                         <div className="dash-notification-content">
                           <div className="dash-notification-title">
-                            {notification.name || 'Anonymous'}
+                            {notification.fullName || 'Anonymous'}
                           </div>
                           <div className="dash-notification-email">
                             {notification.email}
@@ -156,9 +158,7 @@ const Navbar = ({ sidebarOpen, toggleSidebar, adminName }) => {
                           <div className="dash-notification-message">
                             {notification.message}
                           </div>
-                          <div className="dash-notification-time">
-                            {new Date(notification.createdAt || notification.timestamp).toLocaleString()}
-                          </div>
+                          
                         </div>
                         <button
                           className="dash-notification-delete"
