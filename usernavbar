@@ -1,144 +1,182 @@
-/* ============================
-   Notification Styling (Polished Circular Card Look)
-============================ */
+import React, { useState, useEffect } from 'react';
+import { Menu, X, User, LogOut, Bell } from 'lucide-react';
+import './Navbar.css';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import image from './images/standard-chartered-logo.png';
 
-.notification-wrapper {
-  position: relative;
-}
+const Navbar = ({ sidebarOpen, toggleSidebar }) => {
+  const navigate = useNavigate();
+  const [contacts, setContacts] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-.notification-btn {
-  background: none;
-  border: none;
-  position: relative;
-  cursor: pointer;
-  color: #1f2937;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.2s ease;
-}
+  let user = null;
+  let role = null;
+  try {
+    const storedUser = JSON.parse(localStorage.getItem('user'));
+    role = localStorage.getItem('role');
+    user = storedUser ? storedUser : {};
+  } catch (error) {
+    user = null;
+  }
 
-.notification-btn:hover {
-  transform: scale(1.1);
-}
+  const name = user?.firstName || 'Guest';
 
-.notification-count {
-  position: absolute;
-  top: -6px;
-  right: -8px;
-  background: #dc2626;
-  color: #fff;
-  font-size: 10px;
-  border-radius: 50%;
-  padding: 2px 6px;
-  font-weight: 700;
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
-}
+  // Fetch contact queries
+  useEffect(() => {
+    if (role === 'SALES') {
+      axios
+        .get('http://localhost:8080/api/contact/all')
+        .then((res) => {
+          setContacts(res.data);
+          const unread = res.data.filter((c) => !c.read).length;
+          setUnreadCount(unread);
+        })
+        .catch((err) => console.error('Error fetching contacts:', err));
+    }
+  }, [role]);
 
-.notification-dropdown {
-  position: absolute;
-  right: -20px;
-  top: 45px;
-  width: 300px;
-  max-height: 420px;
-  overflow-y: auto;
-  background: linear-gradient(135deg, #111827, #1f2937);
-  color: #f9fafb;
-  border-radius: 25px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-  padding: 14px 16px;
-  z-index: 2000;
-  animation: fadeIn 0.25s ease-in-out;
-}
+  const toggleDropdown = () => setShowDropdown(!showDropdown);
 
-.notification-dropdown h4 {
-  text-align: center;
-  margin-bottom: 10px;
-  font-weight: 600;
-  font-size: 15px;
-  color: #fff;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 6px;
-}
+  const handleMarkRead = (id) => {
+    const updated = contacts.map((c) =>
+      c.id === id ? { ...c, read: true } : c
+    );
+    setContacts(updated);
+    setUnreadCount(updated.filter((c) => !c.read).length);
+  };
 
-.notification-item {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  padding: 10px 12px;
-  margin-bottom: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: all 0.3s ease;
-}
+  const handleDelete = (id) => {
+    axios
+      .delete(`http://localhost:8080/api/contact/delete/${id}`)
+      .then(() => {
+        const updated = contacts.filter((c) => c.id !== id);
+        setContacts(updated);
+        setUnreadCount(updated.filter((c) => !c.read).length);
+      })
+      .catch((err) => console.error('Error deleting contact:', err));
+  };
 
-.notification-item.unread {
-  background: rgba(255, 255, 255, 0.12);
-}
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('user');
+    window.dispatchEvent(new Event('logout'));
+    navigate('/login', { replace: true });
+  };
 
-.notification-item:hover {
-  background: rgba(255, 255, 255, 0.18);
-  transform: translateY(-2px);
-}
+  return (
+    <nav className="dash-navbar">
+      <div className="dash-navbar-left">
+        <button className="dash-hamburger" onClick={toggleSidebar}>
+          {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+        <img src={image} alt="NGOS Logo" className="dash-logo-img" />
+      </div>
 
-.notification-content {
-  flex: 1;
-  padding-right: 8px;
-}
+      <div className="dash-navbar-right">
+        {/* Show Notification Bell only for SALES */}
+        {role === 'SALES' && (
+          <div className="position-relative me-3">
+            <button
+              type="button"
+              className="btn btn-dark rounded-circle position-relative"
+              onClick={toggleDropdown}
+              style={{ width: '45px', height: '45px' }}
+            >
+              <Bell size={20} />
+              {unreadCount > 0 && (
+                <span
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  style={{ fontSize: '10px' }}
+                >
+                  {unreadCount}
+                </span>
+              )}
+            </button>
 
-.notif-name {
-  font-weight: 600;
-  font-size: 14px;
-  color: #f3f4f6;
-}
+            {/* Dropdown menu */}
+            {showDropdown && (
+              <div
+                className="dropdown-menu show notification-dropdown fade-in shadow-lg border-0 rounded-4 p-3"
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '55px',
+                  width: '300px',
+                  backgroundColor: '#212529',
+                  color: 'white',
+                  zIndex: 9999,
+                }}
+              >
+                <h6 className="text-center mb-3">Contact Queries</h6>
+                {contacts.length === 0 ? (
+                  <p className="text-center text-secondary">No messages</p>
+                ) : (
+                  contacts.map((contact) => (
+                    <div
+                      key={contact.id}
+                      className="d-flex justify-content-between align-items-center bg-dark bg-opacity-75 p-2 rounded-3 mb-2"
+                    >
+                      <div>
+                        <strong>{contact.fullname}</strong>
+                        <p className="mb-0 small text-light">{contact.message}</p>
+                      </div>
+                      <div className="d-flex gap-1">
+                        <button
+                          className="btn btn-success btn-sm rounded-circle"
+                          style={{
+                            width: '30px',
+                            height: '30px',
+                            padding: 0,
+                          }}
+                          title="Mark as Read"
+                          onClick={() => handleMarkRead(contact.id)}
+                        >
+                          ✓
+                        </button>
+                        <button
+                          className="btn btn-danger btn-sm rounded-circle"
+                          style={{
+                            width: '30px',
+                            height: '30px',
+                            padding: 0,
+                          }}
+                          title="Delete"
+                          onClick={() => handleDelete(contact.id)}
+                        >
+                          🗑
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
-.notif-email {
-  font-size: 12px;
-  color: #d1d5db;
-  margin-top: 2px;
-}
+        <User className="dash-user-icon" size={20} />
+        <span className="dash-welcome-text">Welcome, {name}!</span>
 
-.notif-message {
-  font-size: 13px;
-  color: #e5e7eb;
-  margin-top: 4px;
-}
+        <button className="dash-logout-btn" onClick={handleLogout}>
+          <LogOut size={18} />
+          Logout
+        </button>
+      </div>
+    </nav>
+  );
+};
 
-.notif-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
+export default Navbar;
 
-.notif-actions button {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: #f9fafb;
-  cursor: pointer;
-  border-radius: 50%;
-  width: 26px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-}
 
-.notif-actions button:hover {
-  background: rgba(96, 165, 250, 0.3);
-  color: #60a5fa;
-}
 
-.no-data,
-.loading-text {
-  text-align: center;
-  padding: 10px 0;
-  font-size: 13px;
-  color: #e5e7eb;
-}
 
-/* Smooth dropdown animation */
+
+
+/* Fade-in animation for notification dropdown */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -150,32 +188,17 @@
   }
 }
 
+.fade-in {
+  animation: fadeIn 0.3s ease forwards;
+}
 
+/* Optional: slightly glowing border for dropdown */
+.notification-dropdown {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(6px);
+}
 
-
-
-
-notifications.map((msg) => (
-  <div
-    key={msg.id}
-    className={`notification-item ${msg.read ? "read" : "unread"}`}
-  >
-    <div className="notification-content">
-      <p className="notif-name">{msg.fullName}</p>
-      <p className="notif-message">{msg.message}</p>
-    </div>
-    <div className="notif-actions">
-      {!msg.read && (
-        <button onClick={() => markAsRead(msg.id)} title="Mark as Read">
-          <CheckCircle size={14} />
-        </button>
-      )}
-      <button onClick={() => deleteNotification(msg.id)} title="Delete">
-        <Trash2 size={14} />
-      </button>
-    </div>
-  </div>
-))
 
 
 
