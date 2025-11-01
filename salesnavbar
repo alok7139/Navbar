@@ -1,0 +1,253 @@
+import React, { useEffect, useState, useRef } from 'react';
+import { Menu, X, User, LogOut, Bell } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import './Navbar.css';
+import image from './images/standard-chartered-logo.png';
+import axios from 'axios';
+
+const API_BASE = "http://localhost:8080"; // update to your backend URL
+
+const Navbar = ({ sidebarOpen, toggleSidebar }) => {
+  const navigate = useNavigate();
+  const [notifications, setNotifications] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // get user details
+  let user = null;
+  try {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    user = storedUser ? storedUser : {};
+  } catch (error) {
+    user = null;
+  }
+
+  const name = user?.firstName || "Guest";
+  const role = localStorage.getItem("role");
+
+  // fetch notifications
+  const fetchNotifications = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/contact/getAllContacts`);
+      setNotifications(res.data || []);
+    } catch (err) {
+      console.error("Error fetching notifications:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (role === "SALES") {
+      fetchNotifications();
+    }
+  }, [role]);
+
+  // delete notification
+  const deleteNotification = async (id) => {
+    try {
+      await axios.delete(`${API_BASE}/api/contact/delete/${id}`);
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    } catch (err) {
+      console.error("Error deleting notification:", err);
+    }
+  };
+
+  // mark as read (frontend only)
+  const markAsRead = (id) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+  };
+
+  // unread count
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  // close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <nav className="dash-navbar d-flex justify-content-between align-items-center px-3">
+      <div className="dash-navbar-left d-flex align-items-center">
+        <button className="dash-hamburger btn" onClick={toggleSidebar}>
+          {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+        <img src={image} alt="Logo" className="dash-logo-img" />
+      </div>
+
+      <div className="dash-navbar-right d-flex align-items-center gap-3 position-relative">
+        {role === "SALES" && (
+          <div className="position-relative" ref={dropdownRef}>
+            <button
+              className="btn btn-light position-relative border-0"
+              onClick={() => setShowDropdown(!showDropdown)}
+            >
+              <Bell size={22} />
+              {unreadCount > 0 && (
+                <span className="badge bg-danger rounded-circle notification-badge">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+
+            {showDropdown && (
+              <div className="notification-dropdown shadow fade-in">
+                {notifications.length === 0 ? (
+                  <div className="text-center text-muted p-2">No notifications</div>
+                ) : (
+                  notifications.map((note) => (
+                    <div
+                      key={note.id}
+                      className={`notification-item ${note.read ? '' : 'unread'}`}
+                      onClick={() => markAsRead(note.id)}
+                    >
+                      <span
+                        className="delete-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteNotification(note.id);
+                        }}
+                      >
+                        ×
+                      </span>
+                      <strong>{note.fullName}</strong>
+                      <div>{note.message}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        <User className="dash-user-icon" size={20} />
+        <span className="dash-welcome-text">Welcome, {name}!</span>
+
+        <button
+          className="dash-logout-btn btn btn-outline-secondary btn-sm"
+          onClick={() => {
+            localStorage.removeItem("token");
+            localStorage.removeItem("role");
+            localStorage.removeItem("user");
+            window.dispatchEvent(new Event("logout"));
+            navigate("/login", { replace: true });
+          }}
+        >
+          <LogOut size={16} className="me-1" />
+          Logout
+        </button>
+      </div>
+    </nav>
+  );
+};
+
+export default Navbar;
+
+
+
+
+
+
+
+
+
+
+
+.dash-navbar {
+  background: transparent;
+  height: 60px;
+  display: flex;
+  align-items: center;
+}
+
+.dash-logo-img {
+  width: 140px;
+  margin-left: 10px;
+}
+
+/* Bell Badge */
+.notification-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 0.7rem;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Dropdown */
+.notification-dropdown {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  background-color: whitesmoke;
+  border-radius: 8px;
+  min-width: 250px;
+  max-height: 300px;
+  overflow-y: auto;
+  animation: fadeIn 0.3s ease-in-out;
+  z-index: 1000;
+}
+
+/* Notification item */
+.notification-item {
+  position: relative;
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-item.unread {
+  font-weight: bold;
+  background-color: #f9f9f9;
+}
+
+.notification-item:hover {
+  background-color: #f1f1f1;
+}
+
+/* Delete button */
+.delete-btn {
+  position: absolute;
+  top: 5px;
+  left: 8px;
+  font-size: 16px;
+  color: #888;
+  cursor: pointer;
+}
+
+.delete-btn:hover {
+  color: red;
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
