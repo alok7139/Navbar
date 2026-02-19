@@ -1,0 +1,124 @@
+ public void validateFatcaEntityCategory(CorporateCustomerTARWrapper corporateCustomerTARWrapper,List<ErrorObject> errorObjList)
+     {
+         LogWriter logWriter = LogWriter.getInstance("validateFatcaEntityCategory", "validateFatcaEntityCategory");
+         FATCAEntCategoryEntityWrapper FATCAEntCategoryEntityWrapper;
+         EntityCategoryWrapper entityCategoryWrapper=null;
+ 
+         try
+         {
+             if(corporateCustomerTARWrapper.getEntityCategory()!=null)
+             {
+                 FATCAEntCategoryEntityWrapper=customerReferencesServiceHostBean.getEntityCategoryWrapperByKey(corporateCustomerTARWrapper.getEntityCategory());
+                 entityCategoryWrapper=(EntityCategoryWrapper) new FATCAEntCategoryWithEntityTranslator().translateDomainToResource(FATCAEntCategoryEntityWrapper);
+ 
+                 if(entityCategoryWrapper !=null)
+                 {
+                     if(entityCategoryWrapper.getCategoryType() != 'F')
+                     {
+                         errorObjList.add(new ErrorObject(ExceptionType.SYSTEM.getValue(),
+                                 CustomerError.INVALID_FCATEGORY.getErrorCode(),
+                                 CustomerError.INVALID_FCATEGORY.getErrorDescription(), "fatca-entity-cat"));
+                     }
+                     else
+                     {
+                         logWriter.println("Global"+corporateCustomerTARWrapper.getGloIntIdNo());
+                         if((corporateCustomerTARWrapper.getGloIntIdNo()==null) && (entityCategoryWrapper.getGiinRequired()!='\u0000') && (entityCategoryWrapper.getGiinRequired()!='N'))
+                         {
+ 
+                             errorObjList.add(new ErrorObject(ExceptionType.SYSTEM.getValue(),
+                                     CustomerError.GLOBINT_MANDATORY_GIIN.getErrorCode(),
+                                     CustomerError.GLOBINT_MANDATORY_GIIN.getErrorDescription(), "global-intermediary-identification-number"));
+                         }
+                     }
+                 }
+                 else
+                 {
+                     errorObjList.add(new ErrorObject(ExceptionType.SYSTEM.getValue(),
+                             CustomerError.FATCA_CATEGORY_NOT_FOUND.getErrorCode(),
+                             CustomerError.FATCA_CATEGORY_NOT_FOUND.getErrorDescription(), "fatca-entity-cat"));
+                 }
+             }
+         }
+         catch(FinderException e)
+         {
+ 
+             errorObjList.add(new ErrorObject(ExceptionType.SYSTEM.getValue(),
+                     CustomerError.FATCA_CATEGORY_NOT_FOUND.getErrorCode(),
+                     CustomerError.FATCA_CATEGORY_NOT_FOUND.getErrorDescription(), "fatca-entity-cat"));
+         }
+         catch(TechnicalComponentException e)
+         {
+             errorObjList.add(new ErrorObject(ExceptionType.SYSTEM.getValue(),
+                     CustomerError.FATCA_CATEGORY_NOT_FOUND.getErrorCode(),
+                     CustomerError.FATCA_CATEGORY_NOT_FOUND.getErrorDescription(), "fatca-entity-cat"));
+         }
+ 
+         catch(Exception e)
+         {
+ 
+             errorObjList.add(new ErrorObject(ExceptionType.SYSTEM.getValue(),
+                     CustomerError.FATCA_CATEGORY_NOT_FOUND.getErrorCode(),
+                     CustomerError.FATCA_CATEGORY_NOT_FOUND.getErrorDescription(), "fatca-entity-cat"));
+         }
+     }
+ 
+     public void validateCRSEntityCategory(CorporateCustomerTARWrapper corporateCustomerTARWrapper,List<ErrorObject> errorObjList)
+     {
+         LogWriter log = LogWriter.getInstance("CorporateCustomerValidator", "validateCRSEntityCategory");
+         FATCAEntCategoryEntityWrapper FATCAEntCategoryEntityWrapper;
+         EntityCategoryWrapper entityCategoryWrapper=null;
+ 
+         try
+         {
+             if(corporateCustomerTARWrapper.getCrsEntityCategory()!=null)
+             {
+ 
+                 FATCAEntCategoryEntityWrapper=customerReferencesServiceHostBean.getEntityCategoryWrapperByKey(corporateCustomerTARWrapper.getCrsEntityCategory());
+                 entityCategoryWrapper=(EntityCategoryWrapper) new FATCAEntCategoryWithEntityTranslator().translateDomainToResource(FATCAEntCategoryEntityWrapper);
+                 log.println("After customerReferencesServiceHostBean check");
+                 if(entityCategoryWrapper !=null)
+                 {
+                     if(entityCategoryWrapper.getCategoryType() != 'C')
+                     {
+                         errorObjList.add(new ErrorObject(ExceptionType.SYSTEM.getValue(),
+                                 CustomerError.INVALID_CRS_CATEGORY.getErrorCode(),
+                                 CustomerError.INVALID_CRS_CATEGORY.getErrorDescription(), "crs-entity-cat"));
+ 
+                     }
+                     else if (entityCategoryWrapper.getGiinRequired() == 'Y' && corporateCustomerTARWrapper.getGloIntIdNo()==null)
+                     {
+                         errorObjList.add(new ErrorObject(ExceptionType.SYSTEM.getValue(),
+                                 CustomerError.GLOBINT_MANDATORY_GIIN.getErrorCode(),
+                                 CustomerError.GLOBINT_MANDATORY_GIIN.getErrorDescription(), "global-intermediary-identification-number"));
+ 
+                     }
+                 }
+                 else
+                 {
+                     errorObjList.add(new ErrorObject(ExceptionType.SYSTEM.getValue(),
+                             CustomerError.FATCA_CATEGORY_NOT_FOUND.getErrorCode(),
+                             CustomerError.FATCA_CATEGORY_NOT_FOUND.getErrorDescription(), "crs-entity-cat"));
+                 }
+             }
+         }catch(FinderException e)
+         {
+ 
+             errorObjList.add(new ErrorObject(ExceptionType.SYSTEM.getValue(),
+                     CustomerError.FATCA_CATEGORY_NOT_FOUND.getErrorCode(),
+                     CustomerError.FATCA_CATEGORY_NOT_FOUND.getErrorDescription(), "crs-entity-cat"));
+         }
+ 
+         catch(TechnicalComponentException e)
+         {
+             errorObjList.add(new ErrorObject(ExceptionType.SYSTEM.getValue(),
+                     CustomerError.FATCA_CATEGORY_NOT_FOUND.getErrorCode(),
+                     CustomerError.FATCA_CATEGORY_NOT_FOUND.getErrorDescription(), "crs-entity-cat"));
+         }
+         catch(Exception e)
+         {
+             log.println("Inside NOT FOUNT***************CATEGORY");
+             errorObjList.add(new ErrorObject(ExceptionType.SYSTEM.getValue(),
+                     CustomerError.FATCA_CATEGORY_NOT_FOUND.getErrorCode(),
+                     CustomerError.FATCA_CATEGORY_NOT_FOUND.getErrorDescription(), "crs-entity-cat"));
+         }
+     }
