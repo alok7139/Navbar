@@ -61,6 +61,119 @@
                      CustomerError.FATCA_CATEGORY_NOT_FOUND.getErrorDescription(), "fatca-entity-cat"));
          }
      }
+
+
+import mockit.*;
+import org.junit.*;
+import java.util.*;
+
+import static org.junit.Assert.*;
+
+public class ValidateFatcaEntityCategoryTest {
+
+    @Tested
+    private YourServiceClass service; // Replace with your actual class name
+
+    @Injectable
+    private CustomerReferencesServiceHostBean customerReferencesServiceHostBean;
+
+    @Injectable
+    private FATCAEntCategoryEntityWrapper fatcaEntityWrapper;
+
+    @Injectable
+    private EntityCategoryWrapper entityCategoryWrapper;
+
+    @Test
+    public void test_CategoryTypeNotF_ShouldAddInvalidFCategoryError() throws Exception {
+
+        CorporateCustomerTARWrapper corporateWrapper = new CorporateCustomerTARWrapper();
+        corporateWrapper.setEntityCategory("TEST");
+
+        List<ErrorObject> errorList = new ArrayList<>();
+
+        new Expectations() {{
+            customerReferencesServiceHostBean.getEntityCategoryWrapperByKey("TEST");
+            result = fatcaEntityWrapper;
+
+            new FATCAEntCategoryWithEntityTranslator().translateDomainToResource(fatcaEntityWrapper);
+            result = entityCategoryWrapper;
+
+            entityCategoryWrapper.getCategoryType();
+            result = 'X';
+        }};
+
+        service.validateFatcaEntityCategory(corporateWrapper, errorList);
+
+        assertFalse(errorList.isEmpty());
+        assertEquals(CustomerError.INVALID_FCATEGORY.getErrorCode(),
+                errorList.get(0).getErrorCode());
+    }
+
+    @Test
+    public void test_GiinRequiredButGlobalIdNull_ShouldAddMandatoryError() throws Exception {
+
+        CorporateCustomerTARWrapper corporateWrapper = new CorporateCustomerTARWrapper();
+        corporateWrapper.setEntityCategory("TEST");
+        corporateWrapper.setGloIntIdNo(null);
+
+        List<ErrorObject> errorList = new ArrayList<>();
+
+        new Expectations() {{
+            customerReferencesServiceHostBean.getEntityCategoryWrapperByKey("TEST");
+            result = fatcaEntityWrapper;
+
+            new FATCAEntCategoryWithEntityTranslator().translateDomainToResource(fatcaEntityWrapper);
+            result = entityCategoryWrapper;
+
+            entityCategoryWrapper.getCategoryType();
+            result = 'F';
+
+            entityCategoryWrapper.getGiinRequired();
+            result = 'Y';
+        }};
+
+        service.validateFatcaEntityCategory(corporateWrapper, errorList);
+
+        assertFalse(errorList.isEmpty());
+        assertEquals(CustomerError.GLOBINT_MANDATORY_GIIN.getErrorCode(),
+                errorList.get(0).getErrorCode());
+    }
+
+    @Test
+    public void test_EntityCategoryNull_ShouldNotAddError() {
+
+        CorporateCustomerTARWrapper corporateWrapper = new CorporateCustomerTARWrapper();
+        corporateWrapper.setEntityCategory(null);
+
+        List<ErrorObject> errorList = new ArrayList<>();
+
+        service.validateFatcaEntityCategory(corporateWrapper, errorList);
+
+        assertTrue(errorList.isEmpty());
+    }
+
+    @Test
+    public void test_FinderException_ShouldAddNotFoundError() throws Exception {
+
+        CorporateCustomerTARWrapper corporateWrapper = new CorporateCustomerTARWrapper();
+        corporateWrapper.setEntityCategory("TEST");
+
+        List<ErrorObject> errorList = new ArrayList<>();
+
+        new Expectations() {{
+            customerReferencesServiceHostBean.getEntityCategoryWrapperByKey("TEST");
+            result = new FinderException();
+        }};
+
+        service.validateFatcaEntityCategory(corporateWrapper, errorList);
+
+        assertFalse(errorList.isEmpty());
+        assertEquals(CustomerError.FATCA_CATEGORY_NOT_FOUND.getErrorCode(),
+                errorList.get(0).getErrorCode());
+    }
+}
+
+
  
      public void validateCRSEntityCategory(CorporateCustomerTARWrapper corporateCustomerTARWrapper,List<ErrorObject> errorObjList)
      {
